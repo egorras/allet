@@ -1,9 +1,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+COPY src/Allet.ServiceDefaults/Allet.ServiceDefaults.csproj src/Allet.ServiceDefaults/
 COPY src/Allet.Web/Allet.Web.csproj src/Allet.Web/
 RUN dotnet restore src/Allet.Web/Allet.Web.csproj
 
+COPY src/Allet.ServiceDefaults/ src/Allet.ServiceDefaults/
 COPY src/Allet.Web/ src/Allet.Web/
 RUN dotnet publish src/Allet.Web/Allet.Web.csproj -c Release -o /app/publish
 
