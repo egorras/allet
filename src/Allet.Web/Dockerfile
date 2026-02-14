@@ -7,7 +7,7 @@ RUN dotnet restore src/Allet.Web/Allet.Web.csproj
 COPY src/Allet.Web/ src/Allet.Web/
 RUN dotnet publish src/Allet.Web/Allet.Web.csproj -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 EXPOSE 8080
 
