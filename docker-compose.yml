@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: src/Allet.Web/Dockerfile
     ports:
-      - "8080:8080"
+      - "8082:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -21,8 +21,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-allet_dev_password}
     volumes:
       - allet-db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U allet"]
       interval: 5s
