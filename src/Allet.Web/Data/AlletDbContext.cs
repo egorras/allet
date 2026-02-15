@@ -5,17 +5,32 @@ namespace Allet.Web.Data;
 
 public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContext(options)
 {
+    public DbSet<Production> Productions => Set<Production>();
     public DbSet<Show> Shows => Set<Show>();
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Production>(entity =>
+        {
+            entity.HasMany(p => p.Shows)
+                .WithOne(s => s.Production)
+                .HasForeignKey(s => s.ProductionId);
+
+            entity.HasIndex(p => new { p.Source, p.Slug, p.Season })
+                .IsUnique();
+        });
+
         modelBuilder.Entity<Show>(entity =>
         {
             entity.HasOne(s => s.Venue)
                 .WithMany(v => v.Shows)
                 .HasForeignKey(s => s.VenueId);
+
+            entity.HasIndex(s => new { s.ProductionId, s.VenueId, s.Date })
+                .IsUnique()
+                .HasFilter("production_id IS NOT NULL AND venue_id IS NOT NULL AND date IS NOT NULL");
         });
 
         modelBuilder.Entity<Subscription>(entity =>

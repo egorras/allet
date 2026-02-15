@@ -8,6 +8,8 @@ public class Show
     public Venue? Venue { get; set; }
     public DateTime? Date { get; set; }
     public string? Url { get; set; }
+    public int? ProductionId { get; set; }
+    public Production? Production { get; set; }
     public string? Source { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

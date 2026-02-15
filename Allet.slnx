@@ -4,4 +4,7 @@
     <Project Path="src/Allet.ServiceDefaults/Allet.ServiceDefaults.csproj" />
     <Project Path="src/Allet.Web/Allet.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Allet.Web.Tests/Allet.Web.Tests.csproj" />
+  </Folder>
 </Solution>
