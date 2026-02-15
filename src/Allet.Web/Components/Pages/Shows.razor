@@ -25,6 +25,25 @@
     </p>
 }
 
+@if (allTags.Count > 0)
+{
+    <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+        <span class="text-muted small me-1">Tags:</span>
+        @foreach (var tag in allTags)
+        {
+            var t = tag;
+            <button class="btn btn-sm @(selectedTags.Contains(t) ? "btn-primary" : "btn-outline-secondary")"
+                    @onclick="() => ToggleTag(t)">
+                @t
+            </button>
+        }
+        @if (selectedTags.Count > 0)
+        {
+            <button class="btn btn-sm btn-link text-decoration-none" @onclick="ClearTags">Clear</button>
+        }
+    </div>
+}
+
 @if (shows is null)
 {
     <p><em>Loading...</em></p>
@@ -139,6 +158,8 @@ else
     private Production? production;
     private DateTime currentMonth = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     private List<CalendarDay> calendarDays = [];
+    private List<string> allTags = [];
+    private HashSet<string> selectedTags = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -146,6 +167,16 @@ else
         {
             production = await Db.Productions.FindAsync(ProductionId.Value);
         }
+
+        allTags = await Db.Productions
+            .Where(p => p.Tags != null && p.Tags != "")
+            .Select(p => p.Tags!)
+            .ToListAsync();
+        allTags = allTags
+            .SelectMany(t => t.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
 
         await LoadShows();
     }
@@ -177,8 +208,18 @@ else
     private void BuildCalendar(DateTime gridStart, DateTime gridEnd)
     {
         calendarDays = [];
-        var lookup = (shows ?? [])
-            .Where(s => s.Date.HasValue)
+        var filtered = (shows ?? []).Where(s => s.Date.HasValue);
+        if (selectedTags.Count > 0)
+        {
+            filtered = filtered.Where(s =>
+            {
+                var tags = s.Production?.Tags;
+                if (string.IsNullOrEmpty(tags)) return false;
+                var showTags = tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                return selectedTags.Any(t => showTags.Contains(t));
+            });
+        }
+        var lookup = filtered
             .GroupBy(s => DateOnly.FromDateTime(s.Date!.Value))
             .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -209,6 +250,28 @@ else
     {
         currentMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         await LoadShows();
+    }
+
+    private void ToggleTag(string tag)
+    {
+        if (!selectedTags.Remove(tag))
+            selectedTags.Add(tag);
+        RebuildCalendar();
+    }
+
+    private void ClearTags()
+    {
+        selectedTags.Clear();
+        RebuildCalendar();
+    }
+
+    private void RebuildCalendar()
+    {
+        var startOfMonth = currentMonth;
+        var endOfMonth = currentMonth.AddMonths(1);
+        var gridStart = startOfMonth.AddDays(-(((int)startOfMonth.DayOfWeek + 6) % 7));
+        var gridEnd = endOfMonth.AddDays((7 - ((int)endOfMonth.DayOfWeek + 6) % 7) % 7);
+        BuildCalendar(gridStart, gridEnd);
     }
 
     private class CalendarDay
