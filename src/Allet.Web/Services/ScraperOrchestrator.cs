@@ -81,6 +81,7 @@ public class ScraperOrchestrator(
                 ? string.Join("|", scraped.GalleryUrls) : existing.GalleryUrls;
             existing.SourceUrl = scraped.SourceUrl ?? existing.SourceUrl;
             existing.Tags = scraped.Tags ?? existing.Tags;
+            existing.RunningTimeMinutes = scraped.RunningTimeMinutes ?? existing.RunningTimeMinutes;
             existing.UpdatedAt = DateTime.UtcNow;
             return existing;
         }
@@ -99,7 +100,8 @@ public class ScraperOrchestrator(
             GalleryUrls = scraped.GalleryUrls.Count > 0
                 ? string.Join("|", scraped.GalleryUrls) : null,
             SourceUrl = scraped.SourceUrl,
-            Tags = scraped.Tags
+            Tags = scraped.Tags,
+            RunningTimeMinutes = scraped.RunningTimeMinutes
         };
         db.Productions.Add(production);
         await db.SaveChangesAsync(cancellationToken);
@@ -122,6 +124,7 @@ public class ScraperOrchestrator(
         {
             existing.Title = scraped.Title;
             existing.Url = scraped.Url;
+            existing.IsRehearsal = scraped.IsRehearsal;
             return;
         }
 
@@ -132,6 +135,7 @@ public class ScraperOrchestrator(
             VenueId = venue.Id,
             Date = scraped.Date,
             Url = scraped.Url,
+            IsRehearsal = scraped.IsRehearsal,
             Source = production.Source
         });
     }

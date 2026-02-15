@@ -55,10 +55,15 @@ else
 
             @if (!string.IsNullOrEmpty(production.Description))
             {
-                <p>@production.Description</p>
+                <div>@((MarkupString)production.Description)</div>
             }
 
             <dl class="row mb-0">
+                @if (production.RunningTimeMinutes.HasValue)
+                {
+                    <dt class="col-sm-3">Running time</dt>
+                    <dd class="col-sm-9">@FormatRunningTime(production.RunningTimeMinutes.Value)</dd>
+                }
                 <dt class="col-sm-3">Source</dt>
                 <dd class="col-sm-9">@production.Source</dd>
                 @if (!string.IsNullOrEmpty(production.SourceUrl))
@@ -75,19 +80,7 @@ else
     @if (!string.IsNullOrEmpty(production.Synopsis))
     {
         <h2 class="mt-4">Synopsis</h2>
-        @foreach (var paragraph in production.Synopsis.Split("\n### ", StringSplitOptions.RemoveEmptyEntries))
-        {
-            @if (paragraph.Contains('\n'))
-            {
-                var lines = paragraph.Split('\n', 2);
-                <h5 class="mt-3">@lines[0].TrimStart('#', ' ')</h5>
-                <p>@lines[1].Trim()</p>
-            }
-            else
-            {
-                <p>@paragraph.TrimStart('#', ' ')</p>
-            }
-        }
+        <div>@((MarkupString)production.Synopsis)</div>
     }
 
     @if (galleryUrls.Count > 0)
@@ -128,6 +121,12 @@ else
                 @(context.Venue?.Name)
             </TemplateColumn>
             <PropertyColumn Property="@(s => s.Date)" Format="yyyy-MM-dd HH:mm" Sortable="true" />
+            <TemplateColumn Title="Info">
+                @if (context.IsRehearsal)
+                {
+                    <span class="badge bg-warning text-dark">Rehearsal</span>
+                }
+            </TemplateColumn>
             <TemplateColumn Title="Link">
                 @if (!string.IsNullOrEmpty(context.Url))
                 {
@@ -162,5 +161,12 @@ else
 
         if (!string.IsNullOrEmpty(production.GalleryUrls))
             galleryUrls = production.GalleryUrls.Split('|', StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
+    private static string FormatRunningTime(int minutes)
+    {
+        var h = minutes / 60;
+        var m = minutes % 60;
+        return h > 0 && m > 0 ? $"{h}h {m}m" : h > 0 ? $"{h}h" : $"{m}m";
     }
 }

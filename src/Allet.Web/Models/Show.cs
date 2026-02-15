@@ -10,6 +10,7 @@ public class Show
     public string? Url { get; set; }
     public int? ProductionId { get; set; }
     public Production? Production { get; set; }
+    public bool IsRehearsal { get; set; }
     public string? Source { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -28,6 +28,7 @@ public class ScrapedProduction
     public string? SourceUrl { get; set; }
     public string? Category { get; set; }
     public string? Tags { get; set; }
+    public int? RunningTimeMinutes { get; set; }
     public List<ScrapedShow> Shows { get; set; } = [];
 }
 
@@ -37,4 +38,5 @@ public class ScrapedShow
     public DateTime Date { get; set; }
     public string? VenueName { get; set; }
     public string? Url { get; set; }
+    public bool IsRehearsal { get; set; }
 }

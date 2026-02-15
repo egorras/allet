@@ -25,7 +25,7 @@ public class ProductionDetailPageTests
     {
         var html = """<h1 class="project-cover-title">Don <em>Giovanni</em></h1>""";
         var page = new ProductionDetailPage(html);
-        Assert.Equal("Don  Giovanni", page.Title);
+        Assert.Equal("Don Giovanni", page.Title);
     }
 
     [Fact]
@@ -53,18 +53,19 @@ public class ProductionDetailPageTests
     }
 
     [Fact]
-    public void Synopsis_ExtractsAndStripsHtml()
+    public void Synopsis_ExtractsAndPreservesSafeHtml()
     {
         var html = """
-            <h2 class="project-subtitle">Synopsis</h2>
+            <section id="synopsis">
             <div class="rich-text"><p><strong>Act I</strong></p><p>The story begins.</p></div>
+            </section>
         """;
         var page = new ProductionDetailPage(html);
         Assert.NotNull(page.Synopsis);
         Assert.Contains("Act I", page.Synopsis);
         Assert.Contains("The story begins.", page.Synopsis);
-        Assert.DoesNotContain("<p>", page.Synopsis);
-        Assert.DoesNotContain("<strong>", page.Synopsis);
+        Assert.Contains("<p>", page.Synopsis);
+        Assert.Contains("<strong>", page.Synopsis);
     }
 
     [Fact]
@@ -78,14 +79,15 @@ public class ProductionDetailPageTests
     [Fact]
     public void Synopsis_TruncatesLongText()
     {
-        var longText = new string('x', 3000);
+        var longText = new string('x', 6000);
         var html = $"""
-            <h2 class="project-subtitle">Synopsis</h2>
+            <section id="synopsis">
             <div class="rich-text">{longText}</div>
+            </section>
         """;
         var page = new ProductionDetailPage(html);
         Assert.NotNull(page.Synopsis);
-        Assert.True(page.Synopsis.Length <= 2003); // 2000 + "..."
+        Assert.True(page.Synopsis.Length <= 5003); // 5000 + "..."
         Assert.EndsWith("...", page.Synopsis);
     }
 
@@ -99,8 +101,9 @@ public class ProductionDetailPageTests
             </head>
             <body>
                 <h1 class="project-cover-title">Onegin</h1>
-                <h2 class="project-subtitle">Synopsis</h2>
+                <section id="synopsis">
                 <div class="rich-text"><p>Onegin rejects Tatyana&#x27;s love.</p></div>
+                </section>
             </body>
             </html>
         """;
@@ -109,6 +112,7 @@ public class ProductionDetailPageTests
 
         Assert.Equal("Onegin", page.Title);
         Assert.Equal("https://www.opera.hu/media/images/onegin.jpg", page.ImageUrl);
-        Assert.Equal("Onegin rejects Tatyana's love.", page.Synopsis);
+        Assert.NotNull(page.Synopsis);
+        Assert.Contains("Onegin rejects Tatyana's love.", page.Synopsis);
     }
 }

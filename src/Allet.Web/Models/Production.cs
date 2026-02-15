@@ -15,6 +15,7 @@ public class Production
     public required string Season { get; set; }
     public string? Category { get; set; }
     public string? Tags { get; set; }
+    public int? RunningTimeMinutes { get; set; }
     public required string Source { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

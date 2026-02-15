@@ -49,6 +49,10 @@ public class ProgrammePage
         @"<span[^>]*class=""post-location-name""[^>]*>(.*?)</span>",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
+    private static readonly Regex RehearsalTagRegex = new(
+        @"<span[^>]*class=""tag[^""]*""[^>]*>\s*rehearsal\s*</span>",
+        RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
     private static readonly Regex HtmlTagRegex = new(
         @"<[^>]+>", RegexOptions.Compiled);
 
@@ -115,6 +119,8 @@ public class ProgrammePage
             ? WebUtility.HtmlDecode(locationMatch.Groups[1].Value.Trim())
             : "Hungarian State Opera";
 
+        var isRehearsal = RehearsalTagRegex.IsMatch(eventHtml);
+
         return new ProgrammeEvent
         {
             Season = season,
@@ -122,7 +128,8 @@ public class ProgrammePage
             Title = title,
             VenueName = venueName,
             Date = new DateTime(year, month, day, hour, minute, 0, DateTimeKind.Utc),
-            RelativeUrl = relativeUrl
+            RelativeUrl = relativeUrl,
+            IsRehearsal = isRehearsal
         };
     }
 
@@ -141,4 +148,5 @@ public class ProgrammeEvent
     public required string VenueName { get; init; }
     public DateTime Date { get; init; }
     public required string RelativeUrl { get; init; }
+    public bool IsRehearsal { get; init; }
 }

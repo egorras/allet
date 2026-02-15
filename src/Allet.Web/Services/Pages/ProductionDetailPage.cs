@@ -65,8 +65,17 @@ public class ProductionDetailPage
         @"<span[^>]*class=""tag[^""]*""[^>]*>(.*?)</span>",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
+    private static readonly Regex RunningTimeRegex = new(
+        @"<minute-to-time\s+minutes=""(\d+)""",
+        RegexOptions.Compiled);
+
     private static readonly Regex HtmlTagRegex = new(
         @"<[^>]+>", RegexOptions.Compiled);
+
+    // Matches HTML tags that are NOT in the safe list
+    private static readonly Regex UnsafeHtmlTagRegex = new(
+        @"<(?!/?(p|em|strong|br|h3)\b)[^>]+>",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly string _html;
 
@@ -103,7 +112,7 @@ public class ProductionDetailPage
     }
 
     /// <summary>
-    /// "In Brief" description from the in-brief tab panel.
+    /// "In Brief" description from the in-brief tab panel. Preserves safe HTML tags.
     /// </summary>
     public string? Description
     {
@@ -115,13 +124,13 @@ public class ProductionDetailPage
             var textMatch = DescriptionTextRegex.Match(sectionMatch.Groups[1].Value);
             if (!textMatch.Success) return null;
 
-            var text = CleanText(textMatch.Groups[1].Value);
+            var text = SanitizeHtml(textMatch.Groups[1].Value);
             return string.IsNullOrWhiteSpace(text) ? null : Truncate(text, 2000);
         }
     }
 
     /// <summary>
-    /// Full synopsis with act structure, preserving h3 headings as markdown-style headers.
+    /// Full synopsis with act structure. Preserves safe HTML tags (p, em, strong, br, h3).
     /// </summary>
     public string? Synopsis
     {
@@ -133,10 +142,7 @@ public class ProductionDetailPage
             var richMatch = RichTextRegex.Match(sectionMatch.Groups[1].Value);
             var content = richMatch.Success ? richMatch.Groups[1].Value : sectionMatch.Groups[1].Value;
 
-            // Convert h3 act headings to markdown-style before stripping HTML
-            var text = Regex.Replace(content, @"<h3[^>]*>(.*?)</h3>", m => $"\n### {CleanText(m.Groups[1].Value)}\n",
-                RegexOptions.Singleline);
-            text = CleanText(text);
+            var text = SanitizeHtml(content);
             return string.IsNullOrWhiteSpace(text) ? null : Truncate(text, 5000);
         }
     }
@@ -183,7 +189,20 @@ public class ProductionDetailPage
     }
 
     /// <summary>
-    /// Tags from &lt;span class="tag ..."&gt; elements.
+    /// Running time in minutes, parsed from &lt;minute-to-time minutes="N"&gt; web component.
+    /// </summary>
+    public int? RunningTimeMinutes
+    {
+        get
+        {
+            var match = RunningTimeRegex.Match(_html);
+            return match.Success && int.TryParse(match.Groups[1].Value, out var minutes)
+                ? minutes : null;
+        }
+    }
+
+    /// <summary>
+    /// Tags from &lt;span class="tag ..."&gt; elements. Excludes "rehearsal" (handled per-show).
     /// </summary>
     public List<string> Tags
     {
@@ -193,11 +212,23 @@ public class ProductionDetailPage
             foreach (Match match in TagRegex.Matches(_html))
             {
                 var text = CleanText(match.Groups[1].Value);
-                if (!string.IsNullOrWhiteSpace(text))
+                if (!string.IsNullOrWhiteSpace(text) &&
+                    !text.Equals("rehearsal", StringComparison.OrdinalIgnoreCase))
                     tags.Add(text);
             }
             return tags;
         }
+    }
+
+    private static string SanitizeHtml(string html)
+    {
+        // Strip unsafe tags, keep <p>, <em>, <strong>, <br>, <h3>
+        var sanitized = UnsafeHtmlTagRegex.Replace(html, " ");
+        // Collapse whitespace between tags
+        sanitized = Regex.Replace(sanitized, @"\s+", " ");
+        // Normalize spaces around block-level tags
+        sanitized = Regex.Replace(sanitized, @"\s*(</?(?:p|h3|br)\b[^>]*>)\s*", "$1");
+        return WebUtility.HtmlDecode(sanitized).Trim();
     }
 
     private static string CleanText(string html)

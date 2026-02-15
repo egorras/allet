@@ -141,6 +141,7 @@ public class OperaHuScraper(
             production.Synopsis = detailPage.Synopsis;
             production.Guide = detailPage.Guide;
             production.GalleryUrls = detailPage.GalleryUrls;
+            production.RunningTimeMinutes = detailPage.RunningTimeMinutes;
             var tags = detailPage.Tags;
             if (tags.Count > 0)
                 production.Tags = string.Join(", ", tags);
@@ -155,7 +156,8 @@ public class OperaHuScraper(
                 Title = production.Title,
                 Date = evt.Date,
                 VenueName = evt.VenueName,
-                Url = $"{BaseUrl}{evt.RelativeUrl}"
+                Url = $"{BaseUrl}{evt.RelativeUrl}",
+                IsRehearsal = evt.IsRehearsal
             });
         }
 
