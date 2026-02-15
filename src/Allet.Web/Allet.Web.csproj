@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <Version>$([System.DateTime]::UtcNow.ToString('yyyy.M.d'))</Version>
   </PropertyGroup>
 
   <ItemGroup>
