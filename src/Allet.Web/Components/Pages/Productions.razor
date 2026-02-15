@@ -1,0 +1,56 @@
+@page "/productions"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@inject AlletDbContext Db
+
+<PageTitle>Productions - Allet</PageTitle>
+
+<h1>Productions</h1>
+<p>Opera, ballet & theatre productions by season.</p>
+
+@if (productions is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (productions.Count == 0)
+{
+    <div class="alert alert-info mt-3">No productions found.</div>
+}
+else
+{
+    <div class="row mt-3">
+        @foreach (var production in productions)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100">
+                    @if (!string.IsNullOrEmpty(production.ImageUrl))
+                    {
+                        <img src="@production.ImageUrl" class="card-img-top" alt="@production.Title" style="height: 200px; object-fit: cover;" />
+                    }
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@production.Title</h5>
+                        <p class="card-text text-muted mb-1">@production.Season</p>
+                        <p class="card-text text-muted mb-2"><small>@production.Source</small></p>
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">@production.Shows.Count show(s)</span>
+                            <a href="shows/@production.Id" class="btn btn-sm btn-outline-primary">View Shows</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Production>? productions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        productions = await Db.Productions
+            .Include(p => p.Shows)
+            .OrderBy(p => p.Title)
+            .ToListAsync();
+    }
+}

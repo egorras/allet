@@ -1,26 +1,75 @@
 @page "/shows"
+@page "/shows/{ProductionId:int}"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@inject AlletDbContext Db
 
 <PageTitle>Shows - Allet</PageTitle>
 
 <h1>Shows</h1>
-<p>Tracked opera, ballet, and theatre performances.</p>
 
-<div class="alert alert-info mt-3">
-    No shows are being tracked yet. Scrapers coming soon.
-</div>
+@if (production is not null)
+{
+    <p>Showing performances for <strong>@production.Title</strong> (@production.Season)
+        <a href="shows" class="ms-2 btn btn-sm btn-outline-secondary">Clear filter</a>
+    </p>
+}
+else
+{
+    <p>All tracked opera, ballet, and theatre performances.</p>
+}
 
-<table class="table mt-3">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Venue</th>
-            <th>Date</th>
-            <th>Source</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td colspan="4" class="text-muted text-center">No data available</td>
-        </tr>
-    </tbody>
-</table>
+@if (shows is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (shows.Count == 0)
+{
+    <div class="alert alert-info mt-3">No shows found.</div>
+}
+else
+{
+    <QuickGrid Items="shows.AsQueryable()" Pagination="pagination" Class="table table-striped">
+        <PropertyColumn Property="@(s => s.Title)" Sortable="true" />
+        <TemplateColumn Title="Production" Sortable="true" SortBy="GridSort<Show>.ByAscending(s => s.Production != null ? s.Production.Title : string.Empty)">
+            @if (context.Production is not null)
+            {
+                <a href="shows/@context.Production.Id">@context.Production.Title</a>
+            }
+        </TemplateColumn>
+        <TemplateColumn Title="Venue" Sortable="true" SortBy="GridSort<Show>.ByAscending(s => s.Venue != null ? s.Venue.Name : string.Empty)">
+            @(context.Venue?.Name)
+        </TemplateColumn>
+        <PropertyColumn Property="@(s => s.Date)" Format="yyyy-MM-dd HH:mm" Sortable="true" />
+        <PropertyColumn Property="@(s => s.Source)" Sortable="true" />
+    </QuickGrid>
+
+    <Paginator State="pagination" />
+}
+
+@code {
+    [Parameter] public int? ProductionId { get; set; }
+
+    private List<Show>? shows;
+    private Production? production;
+    private PaginationState pagination = new() { ItemsPerPage = 20 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = Db.Shows
+            .Include(s => s.Venue)
+            .Include(s => s.Production)
+            .AsQueryable();
+
+        if (ProductionId.HasValue)
+        {
+            query = query.Where(s => s.ProductionId == ProductionId.Value);
+            production = await Db.Productions.FindAsync(ProductionId.Value);
+        }
+
+        shows = await query
+            .OrderByDescending(s => s.Date)
+            .ToListAsync();
+    }
+}
