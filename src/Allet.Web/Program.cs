@@ -47,11 +47,11 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+app.UseHangfireDashboard("/hangfire");
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-app.UseHangfireDashboard("/hangfire");
 
 app.MapDefaultEndpoints();
 
