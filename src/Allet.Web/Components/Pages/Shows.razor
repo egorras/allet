@@ -137,7 +137,7 @@ else
 
     private List<Show>? shows;
     private Production? production;
-    private DateTime currentMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime currentMonth = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     private List<CalendarDay> calendarDays = [];
 
     protected override async Task OnInitializedAsync()
@@ -207,7 +207,7 @@ else
 
     private async Task GoToToday()
     {
-        currentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        currentMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         await LoadShows();
     }
 
