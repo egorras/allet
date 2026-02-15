@@ -72,9 +72,15 @@ public class ScraperOrchestrator(
         if (existing is not null)
         {
             existing.Title = scraped.Title;
+            existing.Subtitle = scraped.Subtitle ?? existing.Subtitle;
             existing.Description = scraped.Description ?? existing.Description;
+            existing.Synopsis = scraped.Synopsis ?? existing.Synopsis;
+            existing.Guide = scraped.Guide ?? existing.Guide;
             existing.ImageUrl = scraped.ImageUrl ?? existing.ImageUrl;
+            existing.GalleryUrls = scraped.GalleryUrls.Count > 0
+                ? string.Join("|", scraped.GalleryUrls) : existing.GalleryUrls;
             existing.SourceUrl = scraped.SourceUrl ?? existing.SourceUrl;
+            existing.Tags = scraped.Tags ?? existing.Tags;
             existing.UpdatedAt = DateTime.UtcNow;
             return existing;
         }
@@ -82,12 +88,18 @@ public class ScraperOrchestrator(
         var production = new Production
         {
             Title = scraped.Title,
+            Subtitle = scraped.Subtitle,
             Slug = scraped.Slug,
             Season = scraped.Season,
             Source = source,
             Description = scraped.Description,
+            Synopsis = scraped.Synopsis,
+            Guide = scraped.Guide,
             ImageUrl = scraped.ImageUrl,
-            SourceUrl = scraped.SourceUrl
+            GalleryUrls = scraped.GalleryUrls.Count > 0
+                ? string.Join("|", scraped.GalleryUrls) : null,
+            SourceUrl = scraped.SourceUrl,
+            Tags = scraped.Tags
         };
         db.Productions.Add(production);
         await db.SaveChangesAsync(cancellationToken);

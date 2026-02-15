@@ -135,8 +135,15 @@ public class OperaHuScraper(
         {
             var detailPage = new ProductionDetailPage(html);
             production.Title = detailPage.Title ?? production.Title;
+            production.Subtitle = detailPage.Subtitle;
             production.ImageUrl = detailPage.ImageUrl;
-            production.Description = detailPage.Synopsis;
+            production.Description = detailPage.Description;
+            production.Synopsis = detailPage.Synopsis;
+            production.Guide = detailPage.Guide;
+            production.GalleryUrls = detailPage.GalleryUrls;
+            var tags = detailPage.Tags;
+            if (tags.Count > 0)
+                production.Tags = string.Join(", ", tags);
         }
 
         await Task.Delay(_options.DelayMs, cancellationToken);

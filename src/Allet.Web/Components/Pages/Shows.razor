@@ -1,5 +1,6 @@
 @page "/shows"
 @page "/shows/{ProductionId:int}"
+@rendermode InteractiveServer
 @using Allet.Web.Data
 @using Allet.Web.Models
 @using Microsoft.EntityFrameworkCore
@@ -30,12 +31,12 @@ else if (shows.Count == 0)
 }
 else
 {
-    <QuickGrid Items="shows.AsQueryable()" Pagination="pagination" Class="table table-striped">
+    <QuickGrid Items="shows.AsQueryable()" Pagination="pagination" Class="table table-striped table-hover">
         <PropertyColumn Property="@(s => s.Title)" Sortable="true" />
         <TemplateColumn Title="Production" Sortable="true" SortBy="GridSort<Show>.ByAscending(s => s.Production != null ? s.Production.Title : string.Empty)">
             @if (context.Production is not null)
             {
-                <a href="shows/@context.Production.Id">@context.Production.Title</a>
+                <a href="productions/@context.Production.Id">@context.Production.Title</a>
             }
         </TemplateColumn>
         <TemplateColumn Title="Venue" Sortable="true" SortBy="GridSort<Show>.ByAscending(s => s.Venue != null ? s.Venue.Name : string.Empty)">
