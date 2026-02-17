@@ -34,84 +34,53 @@ window.alletMap = {
             map.fitBounds(bounds, { padding: 40, maxZoom: 10 });
         }
 
-        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 10 });
+        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 20 });
+        var markerObjects = [];
 
-        map.on('load', function () {
-            var features = markers.map(function (m, i) {
-                return {
-                    type: 'Feature',
-                    id: i,
-                    properties: { label: m.label, color: m.color },
-                    geometry: { type: 'Point', coordinates: [m.lng, m.lat] }
-                };
-            });
+        markers.forEach(function (m, i) {
+            var marker = new mapboxgl.Marker({ color: m.color, scale: 0.8 })
+                .setLngLat([m.lng, m.lat])
+                .addTo(map);
 
-            map.addSource('markers', {
-                type: 'geojson',
-                data: { type: 'FeatureCollection', features: features }
-            });
+            var el = marker.getElement();
+            el.dataset.index = i;
+            el.style.cursor = 'pointer';
 
-            map.addLayer({
-                id: 'markers-circle',
-                type: 'circle',
-                source: 'markers',
-                paint: {
-                    'circle-radius': [
-                        'case',
-                        ['boolean', ['feature-state', 'highlight'], false],
-                        10, 6
-                    ],
-                    'circle-color': ['get', 'color'],
-                    'circle-stroke-width': [
-                        'case',
-                        ['boolean', ['feature-state', 'highlight'], false],
-                        3, 2
-                    ],
-                    'circle-stroke-color': [
-                        'case',
-                        ['boolean', ['feature-state', 'highlight'], false],
-                        '#f59e0b', '#ffffff'
-                    ],
-                    'circle-radius-transition': { duration: 150 },
-                    'circle-stroke-width-transition': { duration: 150 }
-                }
+            el.addEventListener('mouseenter', function () {
+                popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
             });
-
-            // Map hover: show popup
-            map.on('mouseenter', 'markers-circle', function (e) {
-                map.getCanvas().style.cursor = 'pointer';
-                var f = e.features[0];
-                if (f && f.properties.label) {
-                    popup.setLngLat(f.geometry.coordinates).setText(f.properties.label).addTo(map);
-                }
-            });
-            map.on('mouseleave', 'markers-circle', function () {
-                map.getCanvas().style.cursor = '';
+            el.addEventListener('mouseleave', function () {
                 popup.remove();
             });
+
+            markerObjects.push(marker);
         });
 
-        this._maps[mapId] = { map: map, popup: popup, markers: markers };
+        this._maps[mapId] = { map: map, popup: popup, markers: markers, markerObjects: markerObjects };
     },
 
     highlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var map = entry.map;
-        if (!map.getSource('markers')) return;
-        map.setFeatureState({ source: 'markers', id: index }, { highlight: true });
+        var obj = entry.markerObjects[index];
+        if (!obj) return;
+        var el = obj.getElement();
+        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/, '') + ' scale(1.4)';
+        el.style.zIndex = '10';
         var m = entry.markers[index];
         if (m && m.label) {
-            entry.popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
+            entry.popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(entry.map);
         }
     },
 
     unhighlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var map = entry.map;
-        if (!map.getSource('markers')) return;
-        map.setFeatureState({ source: 'markers', id: index }, { highlight: false });
+        var obj = entry.markerObjects[index];
+        if (!obj) return;
+        var el = obj.getElement();
+        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/, '');
+        el.style.zIndex = '';
         entry.popup.remove();
     },
 
