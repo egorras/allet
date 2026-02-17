@@ -148,7 +148,7 @@ else
             .AsSplitQuery()
             .Where(p => !Db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status == ProductionUserStatus.Archived))
             .Where(p => p.Shows.Any(s => !s.Date.HasValue || s.Date > now))
-            .OrderByDescending(p => p.CreatedAt);
+            .OrderBy(p => p.Shows.Min(s => s.Date));
 
         productions = await query.ToListAsync();
         
