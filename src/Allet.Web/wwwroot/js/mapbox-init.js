@@ -110,7 +110,7 @@ window.alletMap = {
             el.style.border = '2px solid white';
             el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
             el.style.cursor = 'pointer';
-            el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+            el.style.transition = 'box-shadow 0.2s ease';
             el.dataset.index = index;
 
             // Create popup for this marker
@@ -122,25 +122,36 @@ window.alletMap = {
 
             // Create marker with custom element and popup
             var marker = new mapboxgl.Marker({
-                element: el
+                element: el,
+                scale: 1
             })
                 .setLngLat([markerData.lng, markerData.lat])
                 .setPopup(popup)
                 .addTo(map);
 
-            // Add hover events for visual effects only
+            // Add hover events for visual effects and popup
             el.addEventListener('mouseenter', function () {
-                el.style.transform = 'scale(1.4)';
+                // Use CSS class for scaling instead of inline transform
+                el.classList.add('marker-hover');
                 el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
                 el.style.zIndex = '10';
-                marker.togglePopup(); // Show popup
+
+                var p = marker.getPopup();
+                if (p && !p.isOpen()) {
+                    marker.togglePopup();
+                }
             });
 
             el.addEventListener('mouseleave', function () {
-                el.style.transform = 'scale(1)';
+                // Remove CSS class
+                el.classList.remove('marker-hover');
                 el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                 el.style.zIndex = '';
-                marker.togglePopup(); // Hide popup
+
+                var p = marker.getPopup();
+                if (p && p.isOpen()) {
+                    marker.togglePopup();
+                }
             });
 
             markerObjects.push(marker);
@@ -156,11 +167,14 @@ window.alletMap = {
         if (!marker) return;
 
         var el = marker.getElement();
-        el.style.transform = 'scale(1.4)';
+        el.classList.add('marker-hover');
         el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
         el.style.zIndex = '10';
 
-        marker.togglePopup();
+        var popup = marker.getPopup();
+        if (popup && !popup.isOpen()) {
+            marker.togglePopup();
+        }
     },
 
     unhighlight: function (mapId, index) {
@@ -170,7 +184,7 @@ window.alletMap = {
         if (!marker) return;
 
         var el = marker.getElement();
-        el.style.transform = 'scale(1)';
+        el.classList.remove('marker-hover');
         el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         el.style.zIndex = '';
 
