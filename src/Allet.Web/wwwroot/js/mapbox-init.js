@@ -1,5 +1,6 @@
 window.alletMap = {
     _maps: {},
+    _tableListeners: {}, // Store listeners by tableId instead of in map entry
 
     // Helper to wait for element to be in DOM
     _waitForElement: function (selector, callback) {
@@ -258,12 +259,12 @@ window.alletMap = {
             self._waitForElement(tableId, function (table) {
                 console.log('[Mapbox] Both map and table ready, binding events');
 
-                // Remove old listeners if they exist
-                if (entry.tableListeners) {
-                    console.log('[Mapbox] Removing old listeners');
-                    table.removeEventListener('mouseover', entry.tableListeners.mouseover);
-                    table.removeEventListener('mouseleave', entry.tableListeners.mouseleave);
-                    table.removeEventListener('click', entry.tableListeners.click);
+                // Remove old listeners if they exist for this table
+                if (self._tableListeners[tableId]) {
+                    console.log('[Mapbox] Removing old listeners for table:', tableId);
+                    table.removeEventListener('mouseover', self._tableListeners[tableId].mouseover);
+                    table.removeEventListener('mouseleave', self._tableListeners[tableId].mouseleave);
+                    table.removeEventListener('click', self._tableListeners[tableId].click);
                 }
 
                 var currentRow = null;
@@ -297,18 +298,15 @@ window.alletMap = {
                         if (!isNaN(idx) && idx >= 0) {
                             var marker = entry.markers[idx];
                             if (marker) {
-                                entry.map.flyTo({
-                                    center: [marker.lng, marker.lat],
-                                    zoom: 12,
-                                    duration: 1000
-                                });
+                                // Just highlight, don't zoom
+                                console.log('[Mapbox] Row clicked, marker:', idx);
                             }
                         }
                     }
                 };
 
-                // Store listeners so we can remove them later
-                entry.tableListeners = {
+                // Store listeners globally by tableId so we can remove them later
+                self._tableListeners[tableId] = {
                     mouseover: mouseoverHandler,
                     mouseleave: mouseleaveHandler,
                     click: clickHandler

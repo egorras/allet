@@ -212,3 +212,32 @@ h1:focus {
 main {
     padding-top: 1.5rem;
 }
+/* Artist Compare Table Styles */
+.artist-compare-table .date-col {
+    white-space: nowrap;
+    width: 100px;
+}
+
+.artist-compare-table .artist-col {
+    width: 150px;
+}
+
+.artist-compare-table .venue-col {
+    max-width: 200px;
+}
+
+.artist-compare-table .venue-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.artist-compare-table .flag-col {
+    width: 40px;
+    text-align: center;
+}
+
+.artist-compare-table .action-col {
+    width: 80px;
+    text-align: right;
+}
