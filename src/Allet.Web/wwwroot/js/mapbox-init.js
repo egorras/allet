@@ -28,6 +28,33 @@ window.alletMap = {
         });
     },
 
+    // Helper to wait for map to be initialized
+    _waitForMap: function (mapId, callback) {
+        var self = this;
+        console.log('[Mapbox] Waiting for map:', mapId);
+
+        if (this._maps[mapId]) {
+            console.log('[Mapbox] Map found immediately:', mapId);
+            callback(this._maps[mapId]);
+            return;
+        }
+
+        // Poll for map to be ready
+        var attempts = 0;
+        var maxAttempts = 50; // 5 seconds max
+        var interval = setInterval(function () {
+            attempts++;
+            if (self._maps[mapId]) {
+                console.log('[Mapbox] Map found after', attempts, 'attempts:', mapId);
+                clearInterval(interval);
+                callback(self._maps[mapId]);
+            } else if (attempts >= maxAttempts) {
+                console.warn('[Mapbox] Map not found after', attempts, 'attempts:', mapId);
+                clearInterval(interval);
+            }
+        }, 100);
+    },
+
     init: function (mapId, accessToken, markers) {
         if (typeof mapboxgl === 'undefined') return;
 
@@ -223,78 +250,69 @@ window.alletMap = {
 
     bindTableHover: function (mapId, tableId) {
         var self = this;
+        var entry = this._maps[mapId];
+        if (!entry) return;
 
-        // Wait for table to be in DOM
+        var table = document.getElementById(tableId);
+        if (!table) {
+            console.warn('[Mapbox] Table not found:', tableId);
+            return;
+        }
+
         console.log('[Mapbox] bindTableHover called for mapId:', mapId, 'tableId:', tableId);
-        this._waitForElement(tableId, function (table) {
-            console.log('[Mapbox] Table element received, binding events');
-            var entry = self._maps[mapId];
-            if (!entry) {
-                console.warn('[Mapbox] No map entry found for:', mapId);
-                return;
+
+        var currentRow = null;
+
+        var mouseoverHandler = function (e) {
+            var row = e.target.closest('tr[data-marker]');
+            if (row === currentRow) return;
+            if (currentRow) {
+                var oldIdx = parseInt(currentRow.dataset.marker, 10);
+                if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
             }
-
-            // Remove old listeners if they exist
-            if (entry.tableListeners) {
-                console.log('[Mapbox] Removing old listeners');
-                table.removeEventListener('mouseover', entry.tableListeners.mouseover);
-                table.removeEventListener('mouseleave', entry.tableListeners.mouseleave);
-                table.removeEventListener('click', entry.tableListeners.click);
+            currentRow = row;
+            if (row) {
+                var idx = parseInt(row.dataset.marker, 10);
+                if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
             }
+        };
 
-            var currentRow = null;
+        var mouseleaveHandler = function () {
+            if (currentRow) {
+                var idx = parseInt(currentRow.dataset.marker, 10);
+                if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
+                currentRow = null;
+            }
+        };
 
-            var mouseoverHandler = function (e) {
-                var row = e.target.closest('tr[data-marker]');
-                if (row === currentRow) return;
-                if (currentRow) {
-                    var oldIdx = parseInt(currentRow.dataset.marker, 10);
-                    if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
-                }
-                currentRow = row;
-                if (row) {
-                    var idx = parseInt(row.dataset.marker, 10);
-                    if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
-                }
-            };
-
-            var mouseleaveHandler = function () {
-                if (currentRow) {
-                    var idx = parseInt(currentRow.dataset.marker, 10);
-                    if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
-                    currentRow = null;
-                }
-            };
-
-            var clickHandler = function (e) {
-                var row = e.target.closest('tr[data-marker]');
-                if (row && entry) {
-                    var idx = parseInt(row.dataset.marker, 10);
-                    if (!isNaN(idx) && idx >= 0) {
-                        var marker = entry.markers[idx];
-                        if (marker) {
-                            entry.map.flyTo({
-                                center: [marker.lng, marker.lat],
-                                zoom: 12,
-                                duration: 1000
-                            });
-                        }
+        var clickHandler = function (e) {
+            var row = e.target.closest('tr[data-marker]');
+            if (row && entry) {
+                var idx = parseInt(row.dataset.marker, 10);
+                if (!isNaN(idx) && idx >= 0) {
+                    var marker = entry.markers[idx];
+                    if (marker) {
+                        entry.map.flyTo({
+                            center: [marker.lng, marker.lat],
+                            zoom: 12,
+                            duration: 1000
+                        });
                     }
                 }
-            };
+            }
+        };
 
-            // Store listeners so we can remove them later
-            entry.tableListeners = {
-                mouseover: mouseoverHandler,
-                mouseleave: mouseleaveHandler,
-                click: clickHandler
-            };
+        // Store listeners so we can remove them later
+        entry.tableListeners = {
+            mouseover: mouseoverHandler,
+            mouseleave: mouseleaveHandler,
+            click: clickHandler
+        };
 
-            // Add new listeners
-            table.addEventListener('mouseover', mouseoverHandler);
-            table.addEventListener('mouseleave', mouseleaveHandler);
-            table.addEventListener('click', clickHandler);
-            console.log('[Mapbox] Event listeners attached successfully');
-        });
+        // Add new listeners
+        table.addEventListener('mouseover', mouseoverHandler);
+        table.addEventListener('mouseleave', mouseleaveHandler);
+        table.addEventListener('click', clickHandler);
+        console.log('[Mapbox] Event listeners attached successfully');
     }
 };
