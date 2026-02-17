@@ -29,7 +29,7 @@
 
         var markers = Markers
             .Where(m => m.Lat != 0 || m.Lng != 0)
-            .Select(m => new { m.Label, m.Lat, m.Lng })
+            .Select(m => new { m.Label, m.Lat, m.Lng, m.Color })
             .ToList();
 
         try

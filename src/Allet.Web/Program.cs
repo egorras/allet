@@ -52,6 +52,12 @@ builder.Services.AddHttpClient<CoeurDePirateScraper>(client =>
 });
 builder.Services.AddScoped<IScraperService, CoeurDePirateScraper>();
 
+builder.Services.AddHttpClient<ZazTourScraper>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<IScraperService, ZazTourScraper>();
+
 builder.Services.AddHttpClient<MapboxGeocodingService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(10);
@@ -62,6 +68,7 @@ builder.Services.AddScoped<ScraperOrchestrator>();
 builder.Services.AddScoped<OperaHuScraperJob>();
 builder.Services.AddScoped<WienerStaatsoperScraperJob>();
 builder.Services.AddScoped<CoeurDePirateScraperJob>();
+builder.Services.AddScoped<ZazScraperJob>();
 
 var app = builder.Build();
 
@@ -105,6 +112,11 @@ RecurringJob.AddOrUpdate<WienerStaatsoperScraperJob>(
 
 RecurringJob.AddOrUpdate<CoeurDePirateScraperJob>(
     "scrape-coeur-de-pirate",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 7 * * *"); // Daily at 7 AM
+
+RecurringJob.AddOrUpdate<ZazScraperJob>(
+    "scrape-zaz",
     job => job.ExecuteAsync(CancellationToken.None),
     "0 7 * * *"); // Daily at 7 AM
 

@@ -1,0 +1,297 @@
+@page "/artists/compare"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@using Allet.Web.Components.Shared
+@inject AlletDbContext Db
+@inject IConfiguration Config
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Compare Tours - Allet</PageTitle>
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="artists">Artists</a></li>
+        <li class="breadcrumb-item active">Compare Tours</li>
+    </ol>
+</nav>
+
+<h1>Compare Tours</h1>
+<p class="text-muted">Select multiple artists to see their tour dates on a shared map and table.</p>
+
+@if (allArtists.Count == 0)
+{
+    <div class="alert alert-info">No artists found. Scrape some data first.</div>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <label class="form-label fw-semibold">Artists</label>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var a in allArtists)
+                {
+                    var artistId = a.Id;
+                    var isSelected = selectedArtistIds.Contains(artistId);
+                    var colorIdx = allArtists.IndexOf(a);
+                    var color = ArtistColors[colorIdx % ArtistColors.Length];
+                    <button type="button"
+                            class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary")"
+                            style="@(isSelected ? $"background-color: {color}; border-color: {color};" : "")"
+                            @onclick="() => ToggleArtist(artistId)">
+                        @a.Name
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (selectedArtistIds.Count > 0)
+    {
+        <div class="row g-3 mb-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small mb-0">Country</label>
+                <select class="form-select form-select-sm" style="width: auto;" @bind="filterCountry" @bind:after="ApplyFilters">
+                    <option value="">All</option>
+                    @foreach (var c in countries)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">From</label>
+                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateFrom" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">To</label>
+                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateTo" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var artistId in selectedArtistIds)
+                {
+                    var a = allArtists.First(x => x.Id == artistId);
+                    var color = GetArtistColor(artistId);
+                    <span class="d-flex align-items-center gap-1">
+                        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:@color;"></span>
+                        <small>@a.Name</small>
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-3 mb-lg-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Artist</th>
+                                <th>Venue</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in filteredShows)
+                            {
+                                var idx = item.MarkerIndex;
+                                var color = GetArtistColor(item.ArtistId);
+                                <tr style="cursor: pointer; border-left: 3px solid @color;" @onmouseenter="() => HighlightMarker(idx)" @onmouseleave="() => UnhighlightMarker(idx)">
+                                    <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:@color;margin-right:4px;"></span>
+                                        @item.ArtistName
+                                    </td>
+                                    <td>
+                                        @(item.Venue?.Name ?? "—")
+                                        @if (!string.IsNullOrEmpty(item.Venue?.City))
+                                        {
+                                            <small class="text-muted d-block">@item.Venue.City</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Show.Url))
+                                        {
+                                            <a href="@item.Show.Url" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Tickets</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (filteredShows.Count == 0)
+                {
+                    <p class="text-muted small">No shows match the current filters.</p>
+                }
+            </div>
+            <div class="col-lg-6">
+                <div class="sticky-top" style="top: 1rem;">
+                    <Map @ref="mapRef" @key="filterKey" Markers="@mapMarkers" AccessToken="@mapboxToken" />
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private static readonly string[] ArtistColors =
+    [
+        "#4f46e5", // indigo
+        "#dc2626", // red
+        "#059669", // emerald
+        "#d97706", // amber
+        "#7c3aed", // violet
+        "#0891b2", // cyan
+        "#be185d", // pink
+        "#65a30d"  // lime
+    ];
+
+    private List<Artist> allArtists = [];
+    private HashSet<int> selectedArtistIds = [];
+    private List<ShowWithContext> allShows = [];
+    private List<ShowWithContext> filteredShows = [];
+    private List<MapMarker> mapMarkers = [];
+    private List<string> countries = [];
+    private string? mapboxToken;
+
+    private string filterCountry = "";
+    private DateTime? filterDateFrom;
+    private DateTime? filterDateTo;
+    private string filterKey => $"{string.Join(",", selectedArtistIds.OrderBy(x => x))}|{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
+
+    private Map? mapRef;
+
+    private sealed record ShowWithContext(Show Show, Venue? Venue, int ArtistId, string ArtistName)
+    {
+        public int MarkerIndex { get; set; } = -1;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        mapboxToken = Config["Mapbox:AccessToken"];
+        allArtists = await Db.Artists.OrderBy(a => a.Name).ToListAsync();
+    }
+
+    private string GetArtistColor(int artistId)
+    {
+        var idx = allArtists.FindIndex(a => a.Id == artistId);
+        return idx >= 0 ? ArtistColors[idx % ArtistColors.Length] : ArtistColors[0];
+    }
+
+    private async Task ToggleArtist(int artistId)
+    {
+        if (!selectedArtistIds.Remove(artistId))
+            selectedArtistIds.Add(artistId);
+
+        await LoadShows();
+    }
+
+    private async Task LoadShows()
+    {
+        allShows.Clear();
+
+        if (selectedArtistIds.Count == 0)
+        {
+            filteredShows.Clear();
+            mapMarkers.Clear();
+            return;
+        }
+
+        var artists = await Db.Artists
+            .Where(a => selectedArtistIds.Contains(a.Id))
+            .Include(a => a.Productions)
+                .ThenInclude(p => p.Shows)
+                .ThenInclude(s => s.Venue)
+            .ToListAsync();
+
+        foreach (var artist in artists)
+        {
+            foreach (var production in artist.Productions)
+            {
+                foreach (var show in production.Shows)
+                {
+                    allShows.Add(new ShowWithContext(show, show.Venue, artist.Id, artist.Name));
+                }
+            }
+        }
+
+        allShows = allShows.OrderBy(x => x.Show.Date).ToList();
+
+        countries = allShows
+            .Select(x => GetCountry(x.Venue))
+            .Where(c => !string.IsNullOrEmpty(c))
+            .Distinct()
+            .OrderBy(c => c)
+            .Cast<string>()
+            .ToList();
+
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredShows = allShows.Where(x =>
+        {
+            if (!string.IsNullOrEmpty(filterCountry) && !string.Equals(GetCountry(x.Venue), filterCountry, StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (filterDateFrom.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date < filterDateFrom.Value.Date))
+                return false;
+            if (filterDateTo.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date > filterDateTo.Value.Date))
+                return false;
+            return true;
+        }).ToList();
+
+        mapMarkers = [];
+        var markerIdx = 0;
+        foreach (var item in filteredShows)
+        {
+            item.MarkerIndex = -1;
+            if (item.Venue is null) continue;
+            var (lat, lng) = GetCoordinates(item.Venue);
+            if (lat.HasValue && lng.HasValue)
+            {
+                var dateStr = item.Show.Date?.ToString("yyyy-MM-dd") ?? "—";
+                mapMarkers.Add(new MapMarker
+                {
+                    Label = $"{item.ArtistName} · {item.Venue.Name} · {dateStr}",
+                    Lat = lat.Value,
+                    Lng = lng.Value,
+                    Color = GetArtistColor(item.ArtistId)
+                });
+                item.MarkerIndex = markerIdx++;
+            }
+        }
+    }
+
+    private async Task HighlightMarker(int index)
+    {
+        if (index < 0 || mapRef is null) return;
+        await JS.InvokeVoidAsync("window.alletMap.highlight", mapRef.MapId, index);
+    }
+
+    private async Task UnhighlightMarker(int index)
+    {
+        if (index < 0 || mapRef is null) return;
+        await JS.InvokeVoidAsync("window.alletMap.unhighlight", mapRef.MapId, index);
+    }
+
+    private static string? GetCountry(Venue? venue)
+    {
+        if (venue is null) return null;
+        if (!string.IsNullOrWhiteSpace(venue.Country)) return venue.Country;
+        return null;
+    }
+
+    private static (double?, double?) GetCoordinates(Venue venue)
+    {
+        if (venue.Latitude.HasValue && venue.Longitude.HasValue)
+            return (venue.Latitude.Value, venue.Longitude.Value);
+        return (null, null);
+    }
+}

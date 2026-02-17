@@ -30,7 +30,9 @@ window.alletMap = {
             el.style.width = '12px';
             el.style.height = '12px';
             el.style.borderRadius = '50%';
-            el.style.backgroundColor = '#4f46e5';
+            var markerColor = m.color || '#4f46e5';
+            el.dataset.color = markerColor;
+            el.style.backgroundColor = markerColor;
             el.style.border = '2px solid white';
             el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3)';
             el.style.transition = 'transform 0.15s, background-color 0.15s';
@@ -58,7 +60,7 @@ window.alletMap = {
         var el = entry.markerEls[index];
         if (!el) return;
         el.style.transform = '';
-        el.style.backgroundColor = '#4f46e5';
+        el.style.backgroundColor = el.dataset.color || '#4f46e5';
         el.style.zIndex = '';
         var marker = entry.markerObjs[index];
         if (marker && marker.getPopup() && marker.getPopup().isOpen()) marker.togglePopup();
