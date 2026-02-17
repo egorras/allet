@@ -1,0 +1,172 @@
+@page "/productions/{Id:int}"
+@rendermode InteractiveServer
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@inject AlletDbContext Db
+@inject NavigationManager Nav
+
+@if (production is null)
+{
+    <PageTitle>Production - Allet</PageTitle>
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <PageTitle>@production.Title - Allet</PageTitle>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="productions">Productions</a></li>
+            <li class="breadcrumb-item active">@production.Title</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        @if (!string.IsNullOrEmpty(production.ImageUrl))
+        {
+            <div class="col-md-4 mb-3">
+                <img src="@production.ImageUrl" class="img-fluid rounded" alt="@production.Title" />
+            </div>
+        }
+        <div class="@(string.IsNullOrEmpty(production.ImageUrl) ? "col-12" : "col-md-8")">
+            <h1>@production.Title</h1>
+            @if (!string.IsNullOrEmpty(production.Subtitle))
+            {
+                <p class="lead text-muted">@production.Subtitle</p>
+            }
+
+            <div class="mb-3">
+                <span class="text-muted">@production.Season</span>
+                @if (!string.IsNullOrEmpty(production.Tags))
+                {
+                    <span class="ms-2">
+                        @foreach (var tag in production.Tags.Split(',', StringSplitOptions.TrimEntries))
+                        {
+                            <span class="badge bg-info text-dark me-1">@tag</span>
+                        }
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(production.Category))
+                {
+                    <span class="badge bg-primary ms-1">@production.Category</span>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(production.Description))
+            {
+                <div>@((MarkupString)production.Description)</div>
+            }
+
+            <dl class="row mb-0">
+                @if (production.RunningTimeMinutes.HasValue)
+                {
+                    <dt class="col-sm-3">Running time</dt>
+                    <dd class="col-sm-9">@FormatRunningTime(production.RunningTimeMinutes.Value)</dd>
+                }
+                <dt class="col-sm-3">Source</dt>
+                <dd class="col-sm-9">@production.Source</dd>
+                @if (!string.IsNullOrEmpty(production.SourceUrl))
+                {
+                    <dt class="col-sm-3">Link</dt>
+                    <dd class="col-sm-9"><a href="@production.SourceUrl" target="_blank" rel="noopener">View on source site</a></dd>
+                }
+                <dt class="col-sm-3">Tracked since</dt>
+                <dd class="col-sm-9">@production.CreatedAt.ToString("yyyy-MM-dd")</dd>
+            </dl>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(production.Synopsis))
+    {
+        <h2 class="mt-4">Synopsis</h2>
+        <div>@((MarkupString)production.Synopsis)</div>
+    }
+
+    @if (galleryUrls.Count > 0)
+    {
+        <h2 class="mt-4">Gallery</h2>
+        <div class="row g-2 mb-4">
+            @foreach (var url in galleryUrls)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a href="@url" target="_blank">
+                        <img src="@url" class="img-fluid rounded" alt="Gallery image" />
+                    </a>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(production.Guide))
+    {
+        <h2 class="mt-4">Opera Guide</h2>
+        @foreach (var part in production.Guide.Split("\n\n", StringSplitOptions.RemoveEmptyEntries))
+        {
+            <p>@part</p>
+        }
+    }
+
+    <h2 class="mt-4">Shows <span class="badge bg-secondary">@production.Shows.Count</span></h2>
+
+    @if (production.Shows.Count == 0)
+    {
+        <div class="alert alert-info">No shows found for this production.</div>
+    }
+    else
+    {
+        <QuickGrid Items="production.Shows.AsQueryable()" Pagination="pagination" Class="table table-striped table-hover">
+            <PropertyColumn Property="@(s => s.Title)" Sortable="true" />
+            <TemplateColumn Title="Venue" Sortable="true" SortBy="GridSort<Show>.ByAscending(s => s.Venue != null ? s.Venue.Name : string.Empty)">
+                @(context.Venue?.Name)
+            </TemplateColumn>
+            <PropertyColumn Property="@(s => s.Date)" Format="yyyy-MM-dd HH:mm" Sortable="true" />
+            <TemplateColumn Title="Info">
+                @if (context.IsRehearsal)
+                {
+                    <span class="badge bg-warning text-dark">Rehearsal</span>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Link">
+                @if (!string.IsNullOrEmpty(context.Url))
+                {
+                    <a href="@context.Url" target="_blank" rel="noopener">View</a>
+                }
+            </TemplateColumn>
+        </QuickGrid>
+
+        <Paginator State="pagination" />
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Production? production;
+    private List<string> galleryUrls = [];
+    private PaginationState pagination = new() { ItemsPerPage = 20 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        production = await Db.Productions
+            .Include(p => p.Shows)
+                .ThenInclude(s => s.Venue)
+            .FirstOrDefaultAsync(p => p.Id == Id);
+
+        if (production is null)
+        {
+            Nav.NavigateTo("productions");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(production.GalleryUrls))
+            galleryUrls = production.GalleryUrls.Split('|', StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
+    private static string FormatRunningTime(int minutes)
+    {
+        var h = minutes / 60;
+        var m = minutes % 60;
+        return h > 0 && m > 0 ? $"{h}h {m}m" : h > 0 ? $"{h}h" : $"{m}m";
+    }
+}
