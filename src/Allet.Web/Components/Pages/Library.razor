@@ -124,7 +124,7 @@ else
         }
         else if (activeTab == "watched")
         {
-            productions = productions.OrderByDescending(p => userActivities[p.Id].WatchedDate ?? DateTime.MinValue).ToList();
+            productions = productions.OrderByDescending(p => userActivities[p.Id].WatchedDate?.ToDateTime(TimeOnly.MinValue) ?? DateTime.MinValue).ToList();
         }
     }
 

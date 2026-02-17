@@ -87,14 +87,6 @@ else if (viewMode == "gallery")
     <div class="row mt-3">
         @foreach (var production in productions)
         {
-            var userStatus = userActivities.TryGetValue(production.Id, out var activity) ? activity.Status : ProductionUserStatus.None;
-            var isArchived = userStatus == ProductionUserStatus.Archived;
-            var isWatched = userStatus == ProductionUserStatus.Watched;
-            var isPlanned = userStatus == ProductionUserStatus.Planned;
-            var dates = production.Shows.Where(s => s.Date.HasValue).Select(s => s.Date!.Value).OrderBy(d => d).ToList();
-    <div class="row mt-3">
-        @foreach (var production in productions)
-        {
             var activity = userActivities.TryGetValue(production.Id, out var act) ? act : null;
             <ProductionCard Production="production" Activity="activity" OnStatusChange="(status) => SetStatus(production.Id, status)" />
         }
