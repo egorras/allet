@@ -12,16 +12,7 @@
 <h1>Productions</h1>
 <p>Opera, ballet & theatre productions by season.</p>
 
-<style>
-    .production-item .status-action {
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
 
-    .production-item:hover .status-action {
-        opacity: 1;
-    }
-</style>
 
 <div class="row g-2 align-items-end mb-3">
     <div class="col-md-3">
@@ -101,87 +92,11 @@ else if (viewMode == "gallery")
             var isWatched = userStatus == ProductionUserStatus.Watched;
             var isPlanned = userStatus == ProductionUserStatus.Planned;
             var dates = production.Shows.Where(s => s.Date.HasValue).Select(s => s.Date!.Value).OrderBy(d => d).ToList();
-            var venues = production.Shows.Where(s => s.Venue != null).Select(s => s.Venue!.Name).Distinct().ToList();
-            <div class="col-md-4 col-lg-3 mb-4 production-item">
-                <div class="card h-100 @(isArchived ? "border-warning" : "")">
-                    @if (!string.IsNullOrEmpty(production.ImageUrl))
-                    {
-                        <img src="@production.ImageUrl" class="card-img-top" alt="@production.Title" style="height: 200px; object-fit: cover; @(isArchived ? "opacity: 0.6;" : "")" />
-                    }
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">
-                            <a href="productions/@production.Id" class="text-decoration-none">@production.Title</a>
-                            @if (isArchived)
-                            {
-                                <span class="badge bg-secondary text-white ms-1">Archived</span>
-                            }
-                            @if (isWatched)
-                            {
-                                <span class="badge bg-success text-white ms-1">Watched</span>
-                            }
-                            @if (isPlanned)
-                            {
-                                <span class="badge bg-info text-dark ms-1">Planned</span>
-                            }
-                        </h5>
-                        @if (isWatched && activity?.WatchedDate.HasValue == true)
-                        {
-                            <div class="small text-success fw-bold">Watched on @activity.WatchedDate.Value.ToString("d MMM yyyy")</div>
-                        }
-                        @if (isPlanned && activity?.Show != null && activity.Show.Date.HasValue)
-                        {
-                            <div class="small text-info fw-bold">Planned for @activity.Show.Date.Value.ToString("d MMM yyyy HH:mm")</div>
-                        }
-                        <p class="card-text text-muted mb-1">@production.Season</p>
-                        @if (venues.Count > 0)
-                        {
-                            <p class="card-text text-muted mb-1">@string.Join(", ", venues)</p>
-                        }
-                        @if (dates.Count > 0)
-                        {
-                            <p class="card-text text-muted mb-1">
-                                @if (dates.First().Date == dates.Last().Date)
-                                {
-                                    @dates.First().ToString("d MMM yyyy")
-                                }
-                                else
-                                {
-                                    @($"{dates.First():d MMM yyyy} – {dates.Last():d MMM yyyy}")
-                                }
-                            </p>
-                        }
-                        @if (!string.IsNullOrEmpty(production.Category))
-                        {
-                            <p class="card-text mb-1">
-                                <span class="badge bg-primary">@production.Category</span>
-                            </p>
-                        }
-                        @if (!string.IsNullOrEmpty(production.Tags))
-                        {
-                            <p class="card-text mb-2">
-                                @foreach (var tag in production.Tags.Split(',', StringSplitOptions.TrimEntries))
-                                {
-                                    <span class="badge bg-info text-dark me-1">@tag</span>
-                                }
-                            </p>
-                        }
-                        <div class="mt-auto">
-                            <span class="badge bg-secondary mb-2">@production.Shows.Count show(s)</span>
-                            <div class="d-flex justify-content-end gap-1 status-action">
-                                <button class="btn btn-sm @(isWatched ? "btn-success" : "btn-outline-success")" @onclick="() => SetStatus(production.Id, isWatched ? ProductionUserStatus.None : ProductionUserStatus.Watched)" title="Mark as Watched">
-                                    <i class="bi bi-check-lg"></i> Watched
-                                </button>
-                                <button class="btn btn-sm @(isPlanned ? "btn-info" : "btn-outline-info")" @onclick="() => SetStatus(production.Id, isPlanned ? ProductionUserStatus.None : ProductionUserStatus.Planned)" title="Mark as Planned">
-                                    <i class="bi bi-calendar-event"></i> Planned
-                                </button>
-                                <button class="btn btn-sm @(isArchived ? "btn-secondary" : "btn-outline-secondary")" @onclick="() => SetStatus(production.Id, isArchived ? ProductionUserStatus.None : ProductionUserStatus.Archived)" title="Archive">
-                                    <i class="bi bi-archive"></i> Archive
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="row mt-3">
+        @foreach (var production in productions)
+        {
+            var activity = userActivities.TryGetValue(production.Id, out var act) ? act : null;
+            <ProductionCard Production="production" Activity="activity" OnStatusChange="(status) => SetStatus(production.Id, status)" />
         }
     </div>
 }

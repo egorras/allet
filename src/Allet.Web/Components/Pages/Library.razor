@@ -1,0 +1,183 @@
+@page "/library"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@using Allet.Web.Components.Shared
+@inject AlletDbContext Db
+@rendermode InteractiveServer
+
+<PageTitle>Library - Allet</PageTitle>
+
+<h1>Library</h1>
+<p>Your tracked productions.</p>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link @(activeTab == "planned" ? "active" : "")" @onclick='() => SetTab("planned")'>
+            Planned
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(activeTab == "watched" ? "active" : "")" @onclick='() => SetTab("watched")'>
+            Watched
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(activeTab == "archived" ? "active" : "")" @onclick='() => SetTab("archived")'>
+            Archived
+        </button>
+    </li>
+</ul>
+
+@if (productions is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (productions.Count == 0)
+{
+    <div class="alert alert-info mt-3">No @activeTab productions found.</div>
+}
+else
+{
+    <div class="row mt-3">
+        @foreach (var production in productions)
+        {
+            var activity = userActivities.TryGetValue(production.Id, out var act) ? act : null;
+            <ProductionCard Production="production" Activity="activity" OnStatusChange="(status) => SetStatus(production.Id, status)" />
+        }
+    </div>
+}
+
+<ProductionStatusModal 
+    Visible="@showStatusModal" 
+    Production="@selectedProduction" 
+    DesiredStatus="@desiredStatus" 
+    OnCancel="@(() => showStatusModal = false)" 
+    OnSave="@HandleStatusSave" />
+
+@code {
+    private const string currentUserId = "default";
+    private List<Production>? productions;
+    private Dictionary<int, UserProductionActivity> userActivities = [];
+    private string activeTab = "planned";
+
+    private bool showStatusModal;
+    private Production? selectedProduction;
+    private ProductionUserStatus desiredStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task SetTab(string tab)
+    {
+        if (activeTab != activeTab)
+        {
+             productions = null; // show loading
+        }
+        activeTab = tab;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        // Define target status based on tab
+        var targetStatus = activeTab switch
+        {
+            "watched" => ProductionUserStatus.Watched,
+            "archived" => ProductionUserStatus.Archived,
+            "planned" => ProductionUserStatus.Planned,
+            _ => ProductionUserStatus.None
+        };
+
+        // Get activities first
+        var myActivities = await Db.UserActivities
+            .Include(a => a.Show)
+            .Where(a => a.UserId == currentUserId && a.Status == targetStatus)
+            .ToListAsync();
+            
+        userActivities = myActivities.ToDictionary(a => a.ProductionId);
+        
+        var productionIds = myActivities.Select(a => a.ProductionId).ToList();
+
+        // Load productions
+        productions = await Db.Productions
+            .AsNoTracking()
+            .Include(p => p.Shows).ThenInclude(s => s.Venue)
+            .AsSplitQuery()
+            .Where(p => productionIds.Contains(p.Id))
+            // Sort logic: 
+            // Planned -> Date Ascending (Next upcoming)
+            // Watched -> Date Descending (Recently watched)
+            // Archived -> Title or Date? Let's do Title for now or Date Descending
+            .OrderByDescending(p => p.Shows.Max(s => s.Date)) // Default sort
+            .ToListAsync();
+            
+        // Apply specific sorting in memory if needed or refine query
+        if (activeTab == "planned")
+        {
+            productions = productions.OrderBy(p => 
+                userActivities[p.Id].Show?.Date ?? 
+                p.Shows.Where(s => s.Date > DateTime.UtcNow).Min(s => s.Date) ?? 
+                DateTime.MaxValue).ToList();
+        }
+        else if (activeTab == "watched")
+        {
+            productions = productions.OrderByDescending(p => userActivities[p.Id].WatchedDate ?? DateTime.MinValue).ToList();
+        }
+    }
+
+    private async Task SetStatus(int productionId, ProductionUserStatus status)
+    {
+         var activity = await Db.UserActivities
+            .FirstOrDefaultAsync(a => a.ProductionId == productionId && a.UserId == currentUserId);
+
+        if (status == ProductionUserStatus.None)
+        {
+             // Direct remove/unset - this will remove it from the current tab!
+            if (activity is not null)
+            {
+                Db.UserActivities.Remove(activity);
+                await Db.SaveChangesAsync();
+                await LoadAsync(); // Reload to remove from list
+            }
+        }
+        else
+        {
+             // Open modal
+             var prod = productions?.FirstOrDefault(p => p.Id == productionId);
+             if (prod != null)
+             {
+                 selectedProduction = prod;
+                 desiredStatus = status;
+                 showStatusModal = true;
+             }
+        }
+    }
+
+    private async Task HandleStatusSave(UserProductionActivity newActivity)
+    {
+        var activity = await Db.UserActivities
+            .FirstOrDefaultAsync(a => a.ProductionId == newActivity.ProductionId && a.UserId == currentUserId);
+
+        if (activity is null)
+        {
+            newActivity.UserId = currentUserId;
+            newActivity.Id = 0; 
+            Db.UserActivities.Add(newActivity);
+        }
+        else
+        {
+            activity.Status = newActivity.Status;
+            activity.Note = newActivity.Note;
+            activity.WatchedDate = newActivity.WatchedDate;
+            activity.ShowId = newActivity.ShowId;
+            activity.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await Db.SaveChangesAsync();
+        showStatusModal = false;
+        await LoadAsync(); // Reload to reflect changes (might move item to another tab!)
+    }
+}

@@ -1,47 +1,46 @@
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">allet <span class="navbar-version">v@(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(4) ?? "dev")</span></a>
+<nav class="navbar navbar-expand-md navbar-light bg-white border-bottom box-shadow mb-3">
+    <div class="container">
+        <a class="navbar-brand" href="">
+            <span class="bi bi-box-seam-fill me-2 text-primary"></span>
+            <span class="fw-bold">allet</span>
+        </a>
+        <button class="navbar-toggler" type="button" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="@NavMenuCssClass" @onclick="CollapseNavMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        Feed
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="library">
+                        Library
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="productions">
+                        Productions
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    private bool collapseNavMenu = true;
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Feed
-            </NavLink>
-        </div>
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse navbar-collapse" : "navbar-collapse";
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="productions">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Productions
-            </NavLink>
-        </div>
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="shows">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Shows
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="subscriptions">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Subscriptions
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
-                <span class="bi bi-gear-fill-nav-menu" aria-hidden="true"></span> Settings
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <a class="nav-link" href="hangfire" target="_blank">
-                <span class="bi bi-clock-fill-nav-menu" aria-hidden="true"></span> Hangfire
-            </a>
-        </div>
-    </nav>
-</div>
+    private void CollapseNavMenu()
+    {
+        collapseNavMenu = true;
+    }
+}
