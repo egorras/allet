@@ -1,4 +1,5 @@
-using Allet.Web.Components;
+using System.Text.Json;
+using Allet.Web.Api;
 using Allet.Web.Data;
 using Allet.Web.Services;
 using Hangfire;
@@ -10,11 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
 builder.AddNpgsqlDbContext<AlletDbContext>("allet-db", configureDbContextOptions: options =>
     options.UseSnakeCaseNamingConvention());
+
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
 
 // Hangfire
 builder.Services.AddHangfire(config => config
@@ -48,14 +49,16 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     Authorization = [new AllowAllDashboardAuthorizationFilter()]
 });
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-app.UseAntiforgery();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+var api = app.MapGroup("/api");
+api.MapProductionEndpoints();
+api.MapShowEndpoints();
+
+app.MapFallbackToFile("index.html");
 
 app.MapDefaultEndpoints();
 

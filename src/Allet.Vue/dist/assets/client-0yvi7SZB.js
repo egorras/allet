@@ -1,0 +1,1 @@
+const i="/api";async function c(e,o){const r=new URL(i+e,window.location.origin);if(o)for(const[s,n]of Object.entries(o))n&&r.searchParams.set(s,n);const t=await fetch(r.toString());if(!t.ok)throw new Error(`API error: ${t.status}`);return t.json()}export{c as g};
