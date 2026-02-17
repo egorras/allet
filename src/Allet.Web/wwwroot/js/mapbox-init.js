@@ -1,7 +1,15 @@
 window.alletMap = {
     _maps: {},
+
     init: function (mapId, accessToken, markers) {
         if (typeof mapboxgl === 'undefined') return;
+
+        // If map already exists, just update markers
+        if (this._maps[mapId]) {
+            this.updateMarkers(mapId, markers);
+            return;
+        }
+
         mapboxgl.accessToken = accessToken;
 
         // normalize property names (Blazor may send PascalCase or camelCase)
@@ -28,56 +36,111 @@ window.alletMap = {
             zoom: zoom
         });
 
+        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 15 });
+
+        this._maps[mapId] = {
+            map: map,
+            popup: popup,
+            markers: [],
+            markerObjects: []
+        };
+
+        // Add markers after map is created
+        this._addMarkers(mapId, markers);
+
+        // Fit bounds if multiple markers
         if (markers.length > 1) {
             var bounds = new mapboxgl.LngLatBounds();
             markers.forEach(function (m) { bounds.extend([m.lng, m.lat]); });
             map.fitBounds(bounds, { padding: 40, maxZoom: 10 });
         }
+    },
 
-        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 15 });
-        var markerObjects = [];
+    updateMarkers: function (mapId, markers) {
+        var entry = this._maps[mapId];
+        if (!entry) return;
 
-        markers.forEach(function (m, i) {
-            // Create custom HTML element for the marker
-            var el = document.createElement('div');
-            el.className = 'custom-marker';
-            el.style.width = '24px';
-            el.style.height = '24px';
-            el.style.borderRadius = '50%';
-            el.style.backgroundColor = m.color;
-            el.style.border = '2px solid white';
-            el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-            el.style.cursor = 'pointer';
-            el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-            el.dataset.index = i;
-
-            // Create marker with custom element
-            var marker = new mapboxgl.Marker({
-                element: el,
-                anchor: 'center'
-            })
-                .setLngLat([m.lng, m.lat])
-                .addTo(map);
-
-            // Add hover events to the custom element
-            el.addEventListener('mouseenter', function () {
-                el.style.transform = 'scale(1.4)';
-                el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
-                el.style.zIndex = '10';
-                popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
-            });
-
-            el.addEventListener('mouseleave', function () {
-                el.style.transform = 'scale(1)';
-                el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                el.style.zIndex = '';
-                popup.remove();
-            });
-
-            markerObjects.push(marker);
+        // normalize property names
+        markers = (markers || []).map(function (m) {
+            return {
+                label: m.label || m.Label || '',
+                lat: m.lat || m.Lat || 0,
+                lng: m.lng || m.Lng || 0,
+                color: m.color || m.Color || '#4f46e5'
+            };
         });
 
-        this._maps[mapId] = { map: map, popup: popup, markers: markers, markerObjects: markerObjects };
+        // Remove old markers
+        entry.markerObjects.forEach(function (marker) {
+            marker.remove();
+        });
+        entry.markerObjects = [];
+        entry.markers = [];
+
+        // Add new markers
+        this._addMarkers(mapId, markers);
+
+        // Fit bounds if multiple markers
+        if (markers.length > 1) {
+            var bounds = new mapboxgl.LngLatBounds();
+            markers.forEach(function (m) { bounds.extend([m.lng, m.lat]); });
+            entry.map.fitBounds(bounds, { padding: 40, maxZoom: 10 });
+        } else if (markers.length === 1) {
+            entry.map.flyTo({ center: [markers[0].lng, markers[0].lat], zoom: 8 });
+        }
+    },
+
+    _addMarkers: function (mapId, markers) {
+        var entry = this._maps[mapId];
+        if (!entry) return;
+
+        var map = entry.map;
+        var popup = entry.popup;
+        var markerObjects = entry.markerObjects;
+
+        markers.forEach(function (markerData, index) {
+            // Use IIFE to properly capture markerData in closure
+            (function (m, i) {
+                // Create custom HTML element for the marker
+                var el = document.createElement('div');
+                el.className = 'custom-marker';
+                el.style.width = '24px';
+                el.style.height = '24px';
+                el.style.borderRadius = '50%';
+                el.style.backgroundColor = m.color;
+                el.style.border = '2px solid white';
+                el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                el.style.cursor = 'pointer';
+                el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+                el.dataset.index = i;
+
+                // Create marker with custom element
+                var marker = new mapboxgl.Marker({
+                    element: el
+                })
+                    .setLngLat([m.lng, m.lat])
+                    .addTo(map);
+
+                // Add hover events - using captured markerData
+                el.addEventListener('mouseenter', function () {
+                    el.style.transform = 'scale(1.4)';
+                    el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
+                    el.style.zIndex = '10';
+                    popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
+                });
+
+                el.addEventListener('mouseleave', function () {
+                    el.style.transform = 'scale(1)';
+                    el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                    el.style.zIndex = '';
+                    popup.remove();
+                });
+
+                markerObjects.push(marker);
+            })(markerData, index);
+        });
+
+        entry.markers = markers;
     },
 
     highlight: function (mapId, index) {

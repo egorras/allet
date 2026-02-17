@@ -24,7 +24,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || string.IsNullOrWhiteSpace(AccessToken) || Markers is null)
+        if (string.IsNullOrWhiteSpace(AccessToken) || Markers is null)
             return;
 
         var markers = Markers
