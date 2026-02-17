@@ -1,6 +1,7 @@
 window.alletMap = {
     _maps: {},
     _tableListeners: {}, // Store listeners by tableId instead of in map entry
+    _tableToMapId: {}, // Track which mapId each table is bound to
 
     // Helper to wait for element to be in DOM
     _waitForElement: function (selector, callback) {
@@ -216,10 +217,17 @@ window.alletMap = {
     },
 
     highlight: function (mapId, index) {
+        console.log('[Mapbox] highlight called for mapId:', mapId, 'index:', index);
         var entry = this._maps[mapId];
-        if (!entry) return;
+        if (!entry) {
+            console.warn('[Mapbox] No entry found for mapId:', mapId);
+            return;
+        }
         var marker = entry.markerObjects[index];
-        if (!marker) return;
+        if (!marker) {
+            console.warn('[Mapbox] No marker found at index:', index, 'total markers:', entry.markerObjects.length);
+            return;
+        }
 
         var el = marker.getElement();
         el.classList.add('marker-hover');
@@ -267,6 +275,10 @@ window.alletMap = {
                     table.removeEventListener('click', self._tableListeners[tableId].click);
                 }
 
+                // Store the current mapId for this table
+                self._tableToMapId[tableId] = mapId;
+                console.log('[Mapbox] Bound table', tableId, 'to map', mapId);
+
                 var currentRow = null;
 
                 var mouseoverHandler = function (e) {
@@ -274,19 +286,28 @@ window.alletMap = {
                     if (row === currentRow) return;
                     if (currentRow) {
                         var oldIdx = parseInt(currentRow.dataset.marker, 10);
-                        if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
+                        var currentMapId = self._tableToMapId[tableId];
+                        if (!isNaN(oldIdx) && oldIdx >= 0 && currentMapId) {
+                            window.alletMap.unhighlight(currentMapId, oldIdx);
+                        }
                     }
                     currentRow = row;
                     if (row) {
                         var idx = parseInt(row.dataset.marker, 10);
-                        if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
+                        var currentMapId = self._tableToMapId[tableId];
+                        if (!isNaN(idx) && idx >= 0 && currentMapId) {
+                            window.alletMap.highlight(currentMapId, idx);
+                        }
                     }
                 };
 
                 var mouseleaveHandler = function () {
                     if (currentRow) {
                         var idx = parseInt(currentRow.dataset.marker, 10);
-                        if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
+                        var currentMapId = self._tableToMapId[tableId];
+                        if (!isNaN(idx) && idx >= 0 && currentMapId) {
+                            window.alletMap.unhighlight(currentMapId, idx);
+                        }
                         currentRow = null;
                     }
                 };

@@ -135,7 +135,7 @@ else
             </div>
             <div class="col-lg-6">
                 <div class="sticky-top" style="top: 1rem;">
-                    <Map @ref="mapRef" @key="filterKey" Markers="@mapMarkers" AccessToken="@mapboxToken" />
+                    <Map @ref="mapRef" Markers="@mapMarkers" AccessToken="@mapboxToken" />
                 </div>
             </div>
         </div>
@@ -166,7 +166,6 @@ else
     private string filterCountry = "";
     private DateTime? filterDateFrom;
     private DateTime? filterDateTo;
-    private string filterKey => $"{string.Join(",", selectedArtistIds.OrderBy(x => x))}|{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
 
     private Map? mapRef;
     private string tableId = "compare-table-" + Guid.NewGuid().ToString("N")[..8];
