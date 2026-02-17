@@ -48,6 +48,12 @@
         </div>
     </div>
     <div class="col-auto">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="showArchivedToggle" @bind="showArchived" @bind:after="OnFilterChanged" />
+            <label class="form-check-label" for="showArchivedToggle">Show archived</label>
+        </div>
+    </div>
+    <div class="col-auto">
         <button class="btn btn-outline-secondary btn-sm" @onclick="ClearFilters">Clear</button>
     </div>
 </div>
@@ -65,14 +71,21 @@ else if (viewMode == "gallery")
     <div class="row mt-3">
         @foreach (var production in productions)
         {
+            var isArchived = archivedIds.Contains(production.Id);
             <div class="col-md-4 col-lg-3 mb-4">
-                <div class="card h-100">
+                <div class="card h-100 @(isArchived ? "border-warning" : "")">
                     @if (!string.IsNullOrEmpty(production.ImageUrl))
                     {
-                        <img src="@production.ImageUrl" class="card-img-top" alt="@production.Title" style="height: 200px; object-fit: cover;" />
+                        <img src="@production.ImageUrl" class="card-img-top" alt="@production.Title" style="height: 200px; object-fit: cover; @(isArchived ? "opacity: 0.6;" : "")" />
                     }
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@production.Title</h5>
+                        <h5 class="card-title">
+                            @production.Title
+                            @if (isArchived)
+                            {
+                                <span class="badge bg-warning text-dark ms-1">Archived</span>
+                            }
+                        </h5>
                         <p class="card-text text-muted mb-1">@production.Season</p>
                         @if (!string.IsNullOrEmpty(production.Category))
                         {
@@ -89,9 +102,19 @@ else if (viewMode == "gallery")
                                 }
                             </p>
                         }
-                        <div class="mt-auto d-flex justify-content-between align-items-center">
-                            <span class="badge bg-secondary">@production.Shows.Count show(s)</span>
-                            <a href="productions/@production.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                        <div class="mt-auto">
+                            <span class="badge bg-secondary mb-2">@production.Shows.Count show(s)</span>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="productions/@production.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                                @if (isArchived)
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => Unarchive(production.Id)">Unarchive</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => OpenArchiveModal(production.Id)">Archive</button>
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -111,12 +134,17 @@ else
                     <th>Tags</th>
                     <th>Shows</th>
                     <th>Running Time</th>
+                    @if (showArchived)
+                    {
+                        <th>Status</th>
+                    }
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var p in productions)
                 {
+                    var isArchived = archivedIds.Contains(p.Id);
                     <tr>
                         <td><a href="productions/@p.Id">@p.Title</a></td>
                         <td>@p.Season</td>
@@ -132,7 +160,32 @@ else
                         </td>
                         <td>@p.Shows.Count</td>
                         <td>@(p.RunningTimeMinutes.HasValue ? $"{p.RunningTimeMinutes} min" : "—")</td>
-                        <td><a href="productions/@p.Id" class="btn btn-sm btn-outline-primary">Details</a></td>
+                        @if (showArchived)
+                        {
+                            <td>
+                                @if (isArchived)
+                                {
+                                    <span class="badge bg-warning text-dark">Archived</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                            </td>
+                        }
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="productions/@p.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                                @if (isArchived)
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => Unarchive(p.Id)">Unarchive</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => OpenArchiveModal(p.Id)">Archive</button>
+                                }
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -140,8 +193,41 @@ else
     </div>
 }
 
+@if (showArchiveModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Archive Production</h5>
+                    <button type="button" class="btn-close" @onclick="CloseArchiveModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select class="form-select" @bind="archiveReason">
+                            <option value="@ArchiveReason.NotInterested">Not interested</option>
+                            <option value="@ArchiveReason.Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Note (optional)</label>
+                        <textarea class="form-control" rows="2" @bind="archiveNote"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseArchiveModal">Cancel</button>
+                    <button type="button" class="btn btn-warning" @onclick="ArchiveProduction">Archive</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
+    private const string currentUserId = "default";
     private List<Production>? productions;
+    private HashSet<int> archivedIds = [];
     private List<string> seasons = [];
     private List<string> categories = [];
 
@@ -150,6 +236,12 @@ else
     private string selectedCategory = "";
     private string sortBy = "title-asc";
     private string viewMode = "gallery";
+    private bool showArchived;
+
+    private bool showArchiveModal;
+    private int archiveProductionId;
+    private ArchiveReason archiveReason = ArchiveReason.NotInterested;
+    private string? archiveNote;
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,6 +254,9 @@ else
     private async Task LoadProductionsAsync()
     {
         var query = Db.Productions.AsNoTracking().Include(p => p.Shows).AsQueryable();
+
+        if (!showArchived)
+            query = query.Where(p => !Db.ArchivedProductions.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId));
 
         if (!string.IsNullOrWhiteSpace(searchText))
             query = query.Where(p => p.Title.ToLower().Contains(searchText.ToLower()));
@@ -179,6 +274,19 @@ else
         };
 
         productions = await query.ToListAsync();
+
+        if (showArchived)
+        {
+            archivedIds = (await Db.ArchivedProductions
+                .Where(a => a.UserId == currentUserId)
+                .Select(a => a.ProductionId)
+                .ToListAsync())
+                .ToHashSet();
+        }
+        else
+        {
+            archivedIds = [];
+        }
     }
 
     private async Task OnFilterChanged() => await LoadProductionsAsync();
@@ -189,6 +297,46 @@ else
         selectedSeason = "";
         selectedCategory = "";
         sortBy = "title-asc";
+        showArchived = false;
+        await LoadProductionsAsync();
+    }
+
+    private void OpenArchiveModal(int productionId)
+    {
+        archiveProductionId = productionId;
+        archiveReason = ArchiveReason.NotInterested;
+        archiveNote = null;
+        showArchiveModal = true;
+    }
+
+    private void CloseArchiveModal()
+    {
+        showArchiveModal = false;
+    }
+
+    private async Task ArchiveProduction()
+    {
+        Db.ArchivedProductions.Add(new ArchivedProduction
+        {
+            ProductionId = archiveProductionId,
+            UserId = currentUserId,
+            Reason = archiveReason,
+            Note = archiveNote,
+        });
+        await Db.SaveChangesAsync();
+        showArchiveModal = false;
+        await LoadProductionsAsync();
+    }
+
+    private async Task Unarchive(int productionId)
+    {
+        var record = await Db.ArchivedProductions
+            .FirstOrDefaultAsync(a => a.ProductionId == productionId && a.UserId == currentUserId);
+        if (record is not null)
+        {
+            Db.ArchivedProductions.Remove(record);
+            await Db.SaveChangesAsync();
+        }
         await LoadProductionsAsync();
     }
 }

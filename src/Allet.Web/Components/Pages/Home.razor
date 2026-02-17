@@ -1,45 +1,145 @@
 @page "/"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@inject AlletDbContext Db
+@rendermode InteractiveServer
 
-<PageTitle>Allet - Dashboard</PageTitle>
+<PageTitle>Feed - Allet</PageTitle>
 
-<h1>Allet</h1>
-<p class="lead">Opera, ballet & show tracker</p>
+<h1>Feed</h1>
+<p>New productions to review.</p>
 
-<div class="row mt-4">
-    <div class="col-md-3 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Productions</h5>
-                <p class="card-text">Browse opera, ballet, and theatre productions by season.</p>
-                <a href="productions" class="btn btn-primary">Browse Productions</a>
+@if (productions is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (productions.Count == 0)
+{
+    <div class="alert alert-success mt-3">You're all caught up — no new productions to review.</div>
+}
+else
+{
+    <div class="row mt-3">
+        @foreach (var production in productions)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100">
+                    @if (!string.IsNullOrEmpty(production.ImageUrl))
+                    {
+                        <img src="@production.ImageUrl" class="card-img-top" alt="@production.Title" style="height: 200px; object-fit: cover;" />
+                    }
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@production.Title</h5>
+                        <p class="card-text text-muted mb-1">@production.Season</p>
+                        @if (!string.IsNullOrEmpty(production.Category))
+                        {
+                            <p class="card-text mb-1">
+                                <span class="badge bg-primary">@production.Category</span>
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(production.Tags))
+                        {
+                            <p class="card-text mb-2">
+                                @foreach (var tag in production.Tags.Split(',', StringSplitOptions.TrimEntries))
+                                {
+                                    <span class="badge bg-info text-dark me-1">@tag</span>
+                                }
+                            </p>
+                        }
+                        <div class="mt-auto">
+                            <span class="badge bg-secondary mb-2">@production.Shows.Count show(s)</span>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="productions/@production.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                                <button class="btn btn-sm btn-outline-warning" @onclick="() => OpenArchiveModal(production.Id)">Archive</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (showArchiveModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Archive Production</h5>
+                    <button type="button" class="btn-close" @onclick="CloseArchiveModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select class="form-select" @bind="archiveReason">
+                            <option value="@ArchiveReason.NotInterested">Not interested</option>
+                            <option value="@ArchiveReason.Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Note (optional)</label>
+                        <textarea class="form-control" rows="2" @bind="archiveNote"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseArchiveModal">Cancel</button>
+                    <button type="button" class="btn btn-warning" @onclick="ArchiveProduction">Archive</button>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Shows</h5>
-                <p class="card-text">Browse and track upcoming performances.</p>
-                <a href="shows" class="btn btn-primary">Browse Shows</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Subscriptions</h5>
-                <p class="card-text">Set up price and seat availability watches for your favourite shows.</p>
-                <a href="subscriptions" class="btn btn-primary">Manage Watches</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Settings</h5>
-                <p class="card-text">Configure Telegram notifications and other preferences.</p>
-                <a href="settings" class="btn btn-primary">Settings</a>
-            </div>
-        </div>
-    </div>
-</div>
+}
+
+@code {
+    private const string currentUserId = "default";
+    private List<Production>? productions;
+
+    private bool showArchiveModal;
+    private int archiveProductionId;
+    private ArchiveReason archiveReason = ArchiveReason.NotInterested;
+    private string? archiveNote;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        productions = await Db.Productions
+            .AsNoTracking()
+            .Include(p => p.Shows)
+            .Where(p => !Db.ArchivedProductions.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId))
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+    }
+
+    private void OpenArchiveModal(int productionId)
+    {
+        archiveProductionId = productionId;
+        archiveReason = ArchiveReason.NotInterested;
+        archiveNote = null;
+        showArchiveModal = true;
+    }
+
+    private void CloseArchiveModal()
+    {
+        showArchiveModal = false;
+    }
+
+    private async Task ArchiveProduction()
+    {
+        Db.ArchivedProductions.Add(new ArchivedProduction
+        {
+            ProductionId = archiveProductionId,
+            UserId = currentUserId,
+            Reason = archiveReason,
+            Note = archiveNote,
+        });
+        await Db.SaveChangesAsync();
+        showArchiveModal = false;
+        await LoadAsync();
+    }
+}
