@@ -6,6 +6,7 @@
 @inject AlletDbContext Db
 @inject IConfiguration Config
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>@(artist?.Name ?? "Artist") - Allet</PageTitle>
@@ -88,7 +89,8 @@ else
                         <tbody>
                             @foreach (var item in filteredShows)
                             {
-                                <tr>
+                                var idx = item.MarkerIndex;
+                                <tr style="cursor: pointer;" @onmouseenter="() => HighlightMarker(idx)" @onmouseleave="() => UnhighlightMarker(idx)">
                                     <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         @(item.Venue?.Name ?? "—")
@@ -115,7 +117,7 @@ else
             </div>
             <div class="col-lg-6">
                 <div class="sticky-top" style="top: 1rem;">
-                    <Map @key="filterKey" Markers="@mapMarkers" AccessToken="@mapboxToken" />
+                    <Map @ref="mapRef" @key="filterKey" Markers="@mapMarkers" AccessToken="@mapboxToken" />
                 </div>
             </div>
         </div>
@@ -137,7 +139,12 @@ else
     private DateTime? filterDateTo;
     private string filterKey => $"{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
 
-    private sealed record ShowWithContext(Show Show, Production Production, Venue? Venue);
+    private Map? mapRef;
+
+    private sealed record ShowWithContext(Show Show, Production Production, Venue? Venue)
+    {
+        public int MarkerIndex { get; set; } = -1;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -189,20 +196,36 @@ else
         }).ToList();
 
         mapMarkers = [];
-        foreach (var item in filteredShows.Where(x => x.Venue != null))
+        var markerIdx = 0;
+        foreach (var item in filteredShows)
         {
-            var (lat, lng) = GetCoordinates(item.Venue!);
+            item.MarkerIndex = -1;
+            if (item.Venue is null) continue;
+            var (lat, lng) = GetCoordinates(item.Venue);
             if (lat.HasValue && lng.HasValue)
             {
                 var dateStr = item.Show.Date?.ToString("yyyy-MM-dd") ?? "—";
                 mapMarkers.Add(new MapMarker
                 {
-                    Label = $"{item.Venue!.Name} · {dateStr}",
+                    Label = $"{item.Venue.Name} · {dateStr}",
                     Lat = lat.Value,
                     Lng = lng.Value
                 });
+                item.MarkerIndex = markerIdx++;
             }
         }
+    }
+
+    private async Task HighlightMarker(int index)
+    {
+        if (index < 0 || mapRef is null) return;
+        await JS.InvokeVoidAsync("window.alletMap.highlight", mapRef.MapId, index);
+    }
+
+    private async Task UnhighlightMarker(int index)
+    {
+        if (index < 0 || mapRef is null) return;
+        await JS.InvokeVoidAsync("window.alletMap.unhighlight", mapRef.MapId, index);
     }
 
     private static string? GetCountry(Venue? venue)

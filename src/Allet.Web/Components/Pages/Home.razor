@@ -68,7 +68,9 @@ else
     {
         using var scope = ScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
-        venues = await db.Venues.Select(v => v.Name).Distinct().OrderBy(n => n).ToListAsync();
+        venues = await db.Venues
+            .Where(v => v.Shows.Any(s => s.Production.ArtistId == null))
+            .Select(v => v.Name).Distinct().OrderBy(n => n).ToListAsync();
         await LoadAsync();
     }
 
