@@ -18,7 +18,6 @@ public class ScrapedProduction
 {
     public required string Title { get; set; }
     public required string Slug { get; set; }
-    public required string Season { get; set; }
     public string? Subtitle { get; set; }
     public string? Description { get; set; }
     public string? Synopsis { get; set; }

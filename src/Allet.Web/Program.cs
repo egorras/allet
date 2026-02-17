@@ -1,5 +1,6 @@
 using Allet.Web.Components;
 using Allet.Web.Data;
+using Allet.Web.Jobs;
 using Allet.Web.Services;
 using Hangfire;
 using Hangfire.Dashboard;
@@ -34,7 +35,19 @@ builder.Services.AddHttpClient<OperaHuScraper>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 builder.Services.AddScoped<IScraperService, OperaHuScraper>();
+
+builder.Services.Configure<WienerStaatsoperScraperOptions>(
+    builder.Configuration.GetSection("Scraper:WienerStaatsoper"));
+builder.Services.AddHttpClient<WienerStaatsoperScraper>(client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Allet/1.0");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<IScraperService, WienerStaatsoperScraper>();
+
 builder.Services.AddScoped<ScraperOrchestrator>();
+builder.Services.AddScoped<OperaHuScraperJob>();
+builder.Services.AddScoped<WienerStaatsoperScraperJob>();
 
 var app = builder.Build();
 
@@ -65,10 +78,15 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// Register recurring scraper job
-RecurringJob.AddOrUpdate<ScraperOrchestrator>(
-    "scrape-all",
-    orchestrator => orchestrator.RunAllScrapersAsync(CancellationToken.None),
+// Register scraper jobs
+RecurringJob.AddOrUpdate<OperaHuScraperJob>(
+    "scrape-opera-hu",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 7 * * *"); // Daily at 7 AM
+
+RecurringJob.AddOrUpdate<WienerStaatsoperScraperJob>(
+    "scrape-wiener-staatsoper",
+    job => job.ExecuteAsync(CancellationToken.None),
     "0 7 * * *"); // Daily at 7 AM
 
 app.Run();

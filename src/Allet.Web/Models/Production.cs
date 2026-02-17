@@ -12,7 +12,6 @@ public class Production
     public string? GalleryUrls { get; set; }
     public string? SourceUrl { get; set; }
     public required string Slug { get; set; }
-    public required string Season { get; set; }
     public string? Category { get; set; }
     public string? Tags { get; set; }
     public int? RunningTimeMinutes { get; set; }

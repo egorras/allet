@@ -18,15 +18,7 @@
     <div class="col-md-3">
         <input type="search" class="form-control" placeholder="Search..." @bind="searchText" @bind:event="oninput" @bind:after="OnFilterChanged" />
     </div>
-    <div class="col-auto">
-        <select class="form-select" @bind="selectedSeason" @bind:after="OnFilterChanged">
-            <option value="">All seasons</option>
-            @foreach (var s in seasons)
-            {
-                <option value="@s">@s</option>
-            }
-        </select>
-    </div>
+
     <div class="col-auto">
         <select class="form-select" @bind="selectedCategory" @bind:after="OnFilterChanged">
             <option value="">All categories</option>
@@ -42,7 +34,7 @@
             <option value="title-desc">Title (Z–A)</option>
             <option value="newest">Newest first</option>
             <option value="date-asc">Date (Earliest first)</option>
-            <option value="season">Season</option>
+
         </select>
     </div>
     <div class="col-auto">
@@ -99,7 +91,7 @@ else
             <thead>
                 <tr>
                     <th>Title</th>
-                    <th>Season</th>
+
                     <th>Category</th>
                     <th>Venue</th>
                     <th>Dates</th>
@@ -121,7 +113,7 @@ else
                     var venues = p.Shows.Where(s => s.Venue != null).Select(s => s.Venue!.Name).Distinct().ToList();
                     <tr class="production-item">
                         <td><a href="productions/@p.Id">@p.Title</a></td>
-                        <td>@p.Season</td>
+
                         <td>@p.Category</td>
                         <td>@string.Join(", ", venues)</td>
                         <td>
@@ -195,11 +187,11 @@ else
     private const string currentUserId = "default";
     private List<Production>? productions;
     private Dictionary<int, UserProductionActivity> userActivities = [];
-    private List<string> seasons = [];
+
     private List<string> categories = [];
 
     private string searchText = "";
-    private string selectedSeason = "";
+
     private string selectedCategory = "";
     private string sortBy = "title-asc";
     private string viewMode = "gallery";
@@ -214,7 +206,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        seasons = await Db.Productions.Select(p => p.Season).Distinct().OrderBy(s => s).ToListAsync();
         categories = await Db.Productions.Select(p => p.Category!).Where(c => c != null).Distinct().OrderBy(c => c).ToListAsync();
 
         await LoadProductionsAsync();
@@ -277,8 +268,7 @@ else
 
         if (!string.IsNullOrWhiteSpace(searchText))
             query = query.Where(p => p.Title.ToLower().Contains(searchText.ToLower()));
-        if (!string.IsNullOrEmpty(selectedSeason))
-            query = query.Where(p => p.Season == selectedSeason);
+
         if (!string.IsNullOrEmpty(selectedCategory))
             query = query.Where(p => p.Category == selectedCategory);
 
@@ -287,7 +277,7 @@ else
             "title-desc" => query.OrderByDescending(p => p.Title),
             "newest" => query.OrderByDescending(p => p.CreatedAt),
             "date-asc" => query.OrderBy(p => p.Shows.Min(s => s.Date)),
-            "season" => query.OrderByDescending(p => p.Season).ThenBy(p => p.Title),
+
             _ => query.OrderBy(p => p.Title),
         };
 
@@ -301,7 +291,6 @@ else
     private async Task ClearFilters()
     {
         searchText = "";
-        selectedSeason = "";
         selectedCategory = "";
         sortBy = "title-asc";
         showArchived = false;

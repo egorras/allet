@@ -13,21 +13,26 @@ public class ScraperOrchestrator(
     {
         foreach (var scraper in scrapers)
         {
-            logger.LogInformation("Running scraper: {Source}", scraper.SourceName);
+            await RunScraperAsync(scraper, cancellationToken);
+        }
+    }
 
-            try
-            {
-                var result = await scraper.ScrapeAsync(cancellationToken);
-                await PersistResultsAsync(scraper.SourceName, result, cancellationToken);
+    public async Task RunScraperAsync(IScraperService scraper, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Running scraper: {Source}", scraper.SourceName);
 
-                logger.LogInformation(
-                    "Scraper {Source} completed: {New} new, {Updated} updated, {Errors} errors",
-                    scraper.SourceName, result.NewCount, result.UpdatedCount, result.Errors.Count);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Scraper {Source} failed", scraper.SourceName);
-            }
+        try
+        {
+            var result = await scraper.ScrapeAsync(cancellationToken);
+            await PersistResultsAsync(scraper.SourceName, result, cancellationToken);
+
+            logger.LogInformation(
+                "Scraper {Source} completed: {New} new, {Updated} updated, {Errors} errors",
+                scraper.SourceName, result.NewCount, result.UpdatedCount, result.Errors.Count);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Scraper {Source} failed", scraper.SourceName);
         }
     }
 
@@ -65,8 +70,7 @@ public class ScraperOrchestrator(
         var existing = await db.Productions
             .FirstOrDefaultAsync(p =>
                 p.Source == source &&
-                p.Slug == scraped.Slug &&
-                p.Season == scraped.Season,
+                p.Slug == scraped.Slug,
                 cancellationToken);
 
         if (existing is not null)
@@ -91,7 +95,6 @@ public class ScraperOrchestrator(
             Title = scraped.Title,
             Subtitle = scraped.Subtitle,
             Slug = scraped.Slug,
-            Season = scraped.Season,
             Source = source,
             Description = scraped.Description,
             Synopsis = scraped.Synopsis,

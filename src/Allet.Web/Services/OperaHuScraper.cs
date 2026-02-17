@@ -31,18 +31,18 @@ public class OperaHuScraper(
             logger.LogInformation("Discovered {Count} events across all months", events.Count);
 
             var grouped = events
-                .GroupBy(e => (e.Season, e.Slug))
+                .GroupBy(e => e.Slug)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             logger.LogInformation("Found {Count} unique productions", grouped.Count);
 
-            foreach (var ((season, slug), showEvents) in grouped)
+            foreach (var (slug, showEvents) in grouped)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try
                 {
-                    var production = await BuildProductionAsync(season, slug, showEvents, cancellationToken);
+                    var production = await BuildProductionAsync(slug, showEvents, cancellationToken);
                     result.Productions.Add(production);
                 }
                 catch (Exception ex)
@@ -116,16 +116,17 @@ public class OperaHuScraper(
     }
 
     private async Task<ScrapedProduction> BuildProductionAsync(
-        string season, string slug, List<ProgrammeEvent> events, CancellationToken cancellationToken)
+        string slug, List<ProgrammeEvent> events, CancellationToken cancellationToken)
     {
         var first = events[0];
-        var productionUrl = $"{BaseUrl}/en/programme/{season}/{slug}/";
+        // Production URL usually contains season, but the slug is the unique identifier we want to group by.
+        // We'll construct the URL from the first event's data.
+        var productionUrl = $"{BaseUrl}/en/programme/{first.Season}/{slug}/"; // Keep using season from event for URL construction if needed
 
         var production = new ScrapedProduction
         {
             Title = first.Title,
             Slug = slug,
-            Season = season,
             SourceUrl = productionUrl
         };
 
