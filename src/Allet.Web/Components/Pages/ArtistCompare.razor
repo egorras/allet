@@ -87,14 +87,14 @@ else
         <div class="row">
             <div class="col-lg-6 mb-3 mb-lg-0">
                 <div class="table-responsive">
-                    <table id="@tableId" class="table table-sm table-hover">
+                    <table id="@tableId" class="table table-sm table-hover artist-compare-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Artist</th>
-                                <th>Venue</th>
-                                <th></th>
-                                <th></th>
+                                <th class="date-col">Date</th>
+                                <th class="artist-col">Artist</th>
+                                <th class="venue-col">Venue</th>
+                                <th class="flag-col"></th>
+                                <th class="action-col"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -104,20 +104,20 @@ else
                                 var color = GetArtistColor(item.ArtistId);
                                 var country = GetCountry(item.Venue);
                                 <tr style="cursor: pointer; border-left: 3px solid @color;" data-marker="@idx">
-                                    <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
-                                    <td>
+                                    <td class="date-col">@item.Show.Date?.ToString("yyyy-MM-dd")</td>
+                                    <td class="artist-col">
                                         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:@color;margin-right:4px;"></span>
                                         @item.ArtistName
                                     </td>
-                                    <td>
-                                        @(DisplayVenueName(item.Venue))
+                                    <td class="venue-col">
+                                        <div class="venue-name">@(DisplayVenueName(item.Venue))</div>
                                         @if (!string.IsNullOrEmpty(item.Venue?.City))
                                         {
                                             <small class="text-muted d-block">@item.Venue.City</small>
                                         }
                                     </td>
-                                    <td>@(Allet.Web.Services.CountryFlagHelper.FlagIcon(country))</td>
-                                    <td>
+                                    <td class="flag-col">@(Allet.Web.Services.CountryFlagHelper.FlagIcon(country))</td>
+                                    <td class="action-col">
                                         @if (!string.IsNullOrEmpty(item.Show.Url))
                                         {
                                             <a href="@item.Show.Url" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Tickets</a>

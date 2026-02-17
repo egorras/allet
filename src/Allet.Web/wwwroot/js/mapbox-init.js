@@ -250,69 +250,76 @@ window.alletMap = {
 
     bindTableHover: function (mapId, tableId) {
         var self = this;
-        var entry = this._maps[mapId];
-        if (!entry) return;
-
-        var table = document.getElementById(tableId);
-        if (!table) {
-            console.warn('[Mapbox] Table not found:', tableId);
-            return;
-        }
 
         console.log('[Mapbox] bindTableHover called for mapId:', mapId, 'tableId:', tableId);
 
-        var currentRow = null;
+        // Wait for both map and table to be ready
+        this._waitForMap(mapId, function (entry) {
+            self._waitForElement(tableId, function (table) {
+                console.log('[Mapbox] Both map and table ready, binding events');
 
-        var mouseoverHandler = function (e) {
-            var row = e.target.closest('tr[data-marker]');
-            if (row === currentRow) return;
-            if (currentRow) {
-                var oldIdx = parseInt(currentRow.dataset.marker, 10);
-                if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
-            }
-            currentRow = row;
-            if (row) {
-                var idx = parseInt(row.dataset.marker, 10);
-                if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
-            }
-        };
-
-        var mouseleaveHandler = function () {
-            if (currentRow) {
-                var idx = parseInt(currentRow.dataset.marker, 10);
-                if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
-                currentRow = null;
-            }
-        };
-
-        var clickHandler = function (e) {
-            var row = e.target.closest('tr[data-marker]');
-            if (row && entry) {
-                var idx = parseInt(row.dataset.marker, 10);
-                if (!isNaN(idx) && idx >= 0) {
-                    var marker = entry.markers[idx];
-                    if (marker) {
-                        entry.map.flyTo({
-                            center: [marker.lng, marker.lat],
-                            zoom: 12,
-                            duration: 1000
-                        });
-                    }
+                // Remove old listeners if they exist
+                if (entry.tableListeners) {
+                    console.log('[Mapbox] Removing old listeners');
+                    table.removeEventListener('mouseover', entry.tableListeners.mouseover);
+                    table.removeEventListener('mouseleave', entry.tableListeners.mouseleave);
+                    table.removeEventListener('click', entry.tableListeners.click);
                 }
-            }
-        };
 
-        // Store listeners so we can remove them later
-        entry.tableListeners = {
-            mouseover: mouseoverHandler,
-            mouseleave: mouseleaveHandler,
-            click: clickHandler
-        };
+                var currentRow = null;
 
-        // Add new listeners
-        table.addEventListener('mouseover', mouseoverHandler);
-        table.addEventListener('mouseleave', mouseleaveHandler);
-        table.addEventListener('click', clickHandler);
-        console.log('[Mapbox] Event listeners attached successfully');
+                var mouseoverHandler = function (e) {
+                    var row = e.target.closest('tr[data-marker]');
+                    if (row === currentRow) return;
+                    if (currentRow) {
+                        var oldIdx = parseInt(currentRow.dataset.marker, 10);
+                        if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
+                    }
+                    currentRow = row;
+                    if (row) {
+                        var idx = parseInt(row.dataset.marker, 10);
+                        if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
+                    }
+                };
+
+                var mouseleaveHandler = function () {
+                    if (currentRow) {
+                        var idx = parseInt(currentRow.dataset.marker, 10);
+                        if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
+                        currentRow = null;
+                    }
+                };
+
+                var clickHandler = function (e) {
+                    var row = e.target.closest('tr[data-marker]');
+                    if (row && entry) {
+                        var idx = parseInt(row.dataset.marker, 10);
+                        if (!isNaN(idx) && idx >= 0) {
+                            var marker = entry.markers[idx];
+                            if (marker) {
+                                entry.map.flyTo({
+                                    center: [marker.lng, marker.lat],
+                                    zoom: 12,
+                                    duration: 1000
+                                });
+                            }
+                        }
+                    }
+                };
+
+                // Store listeners so we can remove them later
+                entry.tableListeners = {
+                    mouseover: mouseoverHandler,
+                    mouseleave: mouseleaveHandler,
+                    click: clickHandler
+                };
+
+                // Add new listeners
+                table.addEventListener('mouseover', mouseoverHandler);
+                table.addEventListener('mouseleave', mouseleaveHandler);
+                table.addEventListener('click', clickHandler);
+                console.log('[Mapbox] Event listeners attached successfully');
+            });
+        });
     }
 };
