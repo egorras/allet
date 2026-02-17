@@ -34,7 +34,16 @@
 
         try
         {
-            await JS.InvokeVoidAsync("window.alletMap.init", MapId, AccessToken, markers);
+            if (firstRender)
+            {
+                // Initialize map only on first render
+                await JS.InvokeVoidAsync("window.alletMap.init", MapId, AccessToken, markers);
+            }
+            else
+            {
+                // Update markers on subsequent renders (e.g., after filtering)
+                await JS.InvokeVoidAsync("window.alletMap.updateMarkers", MapId, markers);
+            }
         }
         catch
         {
