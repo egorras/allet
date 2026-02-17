@@ -3,7 +3,8 @@
 @using Allet.Web.Models
 @using Microsoft.EntityFrameworkCore
 @using Allet.Web.Components.Shared
-@inject AlletDbContext Db
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceScopeFactory ScopeFactory
 @rendermode InteractiveServer
 
 <PageTitle>Feed - Allet</PageTitle>
@@ -65,7 +66,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        venues = await Db.Venues.Select(v => v.Name).Distinct().OrderBy(n => n).ToListAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
+        venues = await db.Venues.Select(v => v.Name).Distinct().OrderBy(n => n).ToListAsync();
         await LoadAsync();
     }
 
@@ -73,11 +76,14 @@ else
     {
         var now = DateTime.UtcNow;
         
+        using var scope = ScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
+
         // Optimize: AsSplitQuery
-        var query = Db.Productions
+        var query = db.Productions
             .AsNoTracking()
             .Include(p => p.Shows).ThenInclude(s => s.Venue)
-            .Where(p => !Db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status != ProductionUserStatus.None))
+            .Where(p => !db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status != ProductionUserStatus.None))
             .Where(p => p.Shows.Any(s => !s.Date.HasValue || s.Date > now));
 
         if (!string.IsNullOrEmpty(selectedVenue))
@@ -91,7 +97,7 @@ else
 
         productions = await query.ToListAsync();
         
-        var myActivities = await Db.UserActivities
+        var myActivities = await db.UserActivities
             .Include(a => a.Show)
             .Where(a => a.UserId == currentUserId)
             .ToListAsync();
@@ -100,7 +106,10 @@ else
 
     private async Task SetStatus(int productionId, ProductionUserStatus status)
     {
-        var activity = await Db.UserActivities
+        using var scope = ScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
+
+        var activity = await db.UserActivities
             .FirstOrDefaultAsync(a => a.ProductionId == productionId && a.UserId == currentUserId);
 
         if (status == ProductionUserStatus.None)
@@ -108,8 +117,8 @@ else
              // Direct remove/unset
             if (activity is not null)
             {
-                Db.UserActivities.Remove(activity);
-                await Db.SaveChangesAsync();
+                db.UserActivities.Remove(activity);
+                await db.SaveChangesAsync();
                 await LoadAsync();
             }
         }
@@ -128,7 +137,10 @@ else
 
     private async Task HandleStatusSave(UserProductionActivity newActivity)
     {
-        var activity = await Db.UserActivities
+        using var scope = ScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
+
+        var activity = await db.UserActivities
             .FirstOrDefaultAsync(a => a.ProductionId == newActivity.ProductionId && a.UserId == currentUserId);
 
         if (activity is null)
@@ -136,7 +148,7 @@ else
             newActivity.UserId = currentUserId;
             // Ensure ID is 0 so it inserts
             newActivity.Id = 0; 
-            Db.UserActivities.Add(newActivity);
+            db.UserActivities.Add(newActivity);
         }
         else
         {
@@ -147,7 +159,7 @@ else
             activity.UpdatedAt = DateTime.UtcNow;
         }
 
-        await Db.SaveChangesAsync();
+        await db.SaveChangesAsync();
         showStatusModal = false;
         await LoadAsync();
     }
