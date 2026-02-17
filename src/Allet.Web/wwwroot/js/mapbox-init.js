@@ -34,22 +34,43 @@ window.alletMap = {
             map.fitBounds(bounds, { padding: 40, maxZoom: 10 });
         }
 
-        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 20 });
+        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 15 });
         var markerObjects = [];
 
         markers.forEach(function (m, i) {
-            var marker = new mapboxgl.Marker({ color: m.color, scale: 0.8 })
+            // Create custom HTML element for the marker
+            var el = document.createElement('div');
+            el.className = 'custom-marker';
+            el.style.width = '24px';
+            el.style.height = '24px';
+            el.style.borderRadius = '50%';
+            el.style.backgroundColor = m.color;
+            el.style.border = '2px solid white';
+            el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+            el.style.cursor = 'pointer';
+            el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+            el.dataset.index = i;
+
+            // Create marker with custom element
+            var marker = new mapboxgl.Marker({
+                element: el,
+                anchor: 'center'
+            })
                 .setLngLat([m.lng, m.lat])
                 .addTo(map);
 
-            var el = marker.getElement();
-            el.dataset.index = i;
-            el.style.cursor = 'pointer';
-
+            // Add hover events to the custom element
             el.addEventListener('mouseenter', function () {
+                el.style.transform = 'scale(1.4)';
+                el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
+                el.style.zIndex = '10';
                 popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
             });
+
             el.addEventListener('mouseleave', function () {
+                el.style.transform = 'scale(1)';
+                el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                el.style.zIndex = '';
                 popup.remove();
             });
 
@@ -65,7 +86,8 @@ window.alletMap = {
         var obj = entry.markerObjects[index];
         if (!obj) return;
         var el = obj.getElement();
-        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/, '') + ' scale(1.4)';
+        el.style.transform = 'scale(1.4)';
+        el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
         el.style.zIndex = '10';
         var m = entry.markers[index];
         if (m && m.label) {
@@ -79,7 +101,8 @@ window.alletMap = {
         var obj = entry.markerObjects[index];
         if (!obj) return;
         var el = obj.getElement();
-        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/, '');
+        el.style.transform = 'scale(1)';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         el.style.zIndex = '';
         entry.popup.remove();
     },

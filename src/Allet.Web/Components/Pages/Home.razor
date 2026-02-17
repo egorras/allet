@@ -96,7 +96,14 @@ else
 
         // Populate filter options from the feed productions only
         sources = await baseQuery.Select(p => p.Source).Distinct().OrderBy(s => s).ToListAsync();
-        venues = await baseQuery.SelectMany(p => p.Shows)
+        
+        // Filter venues based on selected source
+        var venueQuery = baseQuery;
+        if (!string.IsNullOrEmpty(selectedSource))
+        {
+            venueQuery = venueQuery.Where(p => p.Source == selectedSource);
+        }
+        venues = await venueQuery.SelectMany(p => p.Shows)
             .Where(s => s.Venue != null)
             .Select(s => s.Venue!.Name).Distinct().OrderBy(n => n).ToListAsync();
 
