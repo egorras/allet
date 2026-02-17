@@ -208,41 +208,18 @@ public class ScraperOrchestrator(
         return venue;
     }
 
-    // Common country name/code variants that may appear as trailing suffix in venue names
-    private static readonly Dictionary<string, string[]> CountryAliases = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["France"] = ["France", "FR"],
-        ["Canada"] = ["Canada", "CA"],
-        ["Belgium"] = ["Belgium", "Belgique", "BE"],
-        ["United States"] = ["United States", "USA", "US"],
-        ["United Kingdom"] = ["United Kingdom", "UK", "GB"],
-        ["Germany"] = ["Germany", "Deutschland", "DE"],
-        ["Austria"] = ["Austria", "Österreich", "AT"],
-        ["Switzerland"] = ["Switzerland", "Suisse", "Schweiz", "CH"],
-        ["Netherlands"] = ["Netherlands", "NL"],
-        ["Spain"] = ["Spain", "España", "ES"],
-        ["Italy"] = ["Italy", "Italia", "IT"],
-        ["Hungary"] = ["Hungary", "Magyarország", "HU"],
-    };
-
     private static string StripTrailingCountry(string name, string? country)
     {
         if (string.IsNullOrWhiteSpace(country)) return name;
 
-        // Collect all aliases for this country
+        // Try the geocoded country name (e.g. "France") and its ISO code (e.g. "FR")
         var suffixes = new List<string> { country };
-        foreach (var (_, aliases) in CountryAliases)
-        {
-            if (aliases.Any(a => string.Equals(a, country, StringComparison.OrdinalIgnoreCase)))
-            {
-                suffixes = [..aliases];
-                break;
-            }
-        }
+        var code = CountryFlagHelper.ToIsoCode(country);
+        if (code is not null)
+            suffixes.Add(code);
 
         foreach (var suffix in suffixes)
         {
-            // Match ", France" or ", FR" at the end
             if (name.EndsWith(", " + suffix, StringComparison.OrdinalIgnoreCase))
             {
                 return name[..^(", ".Length + suffix.Length)].TrimEnd();

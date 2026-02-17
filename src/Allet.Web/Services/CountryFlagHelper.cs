@@ -46,6 +46,15 @@ public static class CountryFlagHelper
     };
 
     /// <summary>
+    /// Returns the ISO 3166-1 alpha-2 code for a country name, or null if not recognized.
+    /// </summary>
+    public static string? ToIsoCode(string? country)
+    {
+        if (string.IsNullOrWhiteSpace(country)) return null;
+        return CountryToCode.TryGetValue(country.Trim(), out var code) ? code : null;
+    }
+
+    /// <summary>
     /// Converts a country name to a flag emoji (e.g. "France" → "🇫🇷").
     /// Returns null if the country is not recognized.
     /// </summary>
