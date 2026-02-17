@@ -56,14 +56,14 @@ public class ZazTourScraper(HttpClient httpClient, ILogger<ZazTourScraper> logge
                     if (ev.TryGetProperty("location", out var location))
                     {
                         if (location.TryGetProperty("name", out var locName))
-                            venueName = locName.GetString();
+                            venueName = GetStringValue(locName);
 
                         if (location.TryGetProperty("address", out var address))
                         {
                             if (address.TryGetProperty("addressLocality", out var locality))
-                                city = locality.GetString();
+                                city = GetStringValue(locality);
                             if (address.TryGetProperty("addressCountry", out var countryEl))
-                                country = countryEl.GetString();
+                                country = GetStringValue(countryEl);
                         }
                     }
 
@@ -148,6 +148,17 @@ public class ZazTourScraper(HttpClient httpClient, ILogger<ZazTourScraper> logge
         }
 
         return events;
+    }
+
+    private static string? GetStringValue(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.String)
+            return element.GetString();
+
+        if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty("name", out var name))
+            return name.GetString();
+
+        return element.ToString();
     }
 
     private static void CollectMusicEvents(JsonElement element, List<JsonElement> events)
