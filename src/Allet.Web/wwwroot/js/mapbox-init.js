@@ -99,34 +99,49 @@ window.alletMap = {
         var markerObjects = entry.markerObjects;
 
         markers.forEach(function (markerData, index) {
-            // Use IIFE to properly capture markerData in closure
-            (function (m, i) {
+            // Skip invalid markers
+            if (!markerData || !markerData.lng || !markerData.lat) {
+                return;
+            }
+
+            // Store coordinates in variables BEFORE creating the IIFE
+            var markerLng = parseFloat(markerData.lng);
+            var markerLat = parseFloat(markerData.lat);
+            var markerLabel = markerData.label || '';
+            var markerColor = markerData.color || '#4f46e5';
+
+            if (isNaN(markerLng) || isNaN(markerLat)) {
+                return;
+            }
+
+            // Use IIFE to properly capture all marker data
+            (function (lng, lat, label, color, idx) {
                 // Create custom HTML element for the marker
                 var el = document.createElement('div');
                 el.className = 'custom-marker';
                 el.style.width = '24px';
                 el.style.height = '24px';
                 el.style.borderRadius = '50%';
-                el.style.backgroundColor = m.color;
+                el.style.backgroundColor = color;
                 el.style.border = '2px solid white';
                 el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                 el.style.cursor = 'pointer';
                 el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-                el.dataset.index = i;
+                el.dataset.index = idx;
 
                 // Create marker with custom element
                 var marker = new mapboxgl.Marker({
                     element: el
                 })
-                    .setLngLat([m.lng, m.lat])
+                    .setLngLat([lng, lat])
                     .addTo(map);
 
-                // Add hover events - using captured markerData
+                // Add hover events - using captured coordinates from IIFE parameters
                 el.addEventListener('mouseenter', function () {
                     el.style.transform = 'scale(1.4)';
                     el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
                     el.style.zIndex = '10';
-                    popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
+                    popup.setLngLat([lng, lat]).setText(label).addTo(map);
                 });
 
                 el.addEventListener('mouseleave', function () {
@@ -137,7 +152,7 @@ window.alletMap = {
                 });
 
                 markerObjects.push(marker);
-            })(markerData, index);
+            })(markerLng, markerLat, markerLabel, markerColor, index);
         });
 
         entry.markers = markers;
