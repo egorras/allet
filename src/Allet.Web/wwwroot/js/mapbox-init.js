@@ -36,11 +36,8 @@ window.alletMap = {
             zoom: zoom
         });
 
-        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 15 });
-
         this._maps[mapId] = {
             map: map,
-            popup: popup,
             markers: [],
             markerObjects: []
         };
@@ -95,7 +92,6 @@ window.alletMap = {
         if (!entry) return;
 
         var map = entry.map;
-        var popup = entry.popup;
         var markerObjects = entry.markerObjects;
 
         markers.forEach(function (markerData, index) {
@@ -104,55 +100,50 @@ window.alletMap = {
                 return;
             }
 
-            // Store coordinates in variables BEFORE creating the IIFE
-            var markerLng = parseFloat(markerData.lng);
-            var markerLat = parseFloat(markerData.lat);
-            var markerLabel = markerData.label || '';
-            var markerColor = markerData.color || '#4f46e5';
+            // Create custom HTML element for the marker
+            var el = document.createElement('div');
+            el.className = 'custom-marker';
+            el.style.width = '24px';
+            el.style.height = '24px';
+            el.style.borderRadius = '50%';
+            el.style.backgroundColor = markerData.color;
+            el.style.border = '2px solid white';
+            el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+            el.style.cursor = 'pointer';
+            el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+            el.dataset.index = index;
 
-            if (isNaN(markerLng) || isNaN(markerLat)) {
-                return;
-            }
+            // Create popup for this marker
+            var popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                offset: 25
+            }).setText(markerData.label);
 
-            // Use IIFE to properly capture all marker data
-            (function (lng, lat, label, color, idx) {
-                // Create custom HTML element for the marker
-                var el = document.createElement('div');
-                el.className = 'custom-marker';
-                el.style.width = '24px';
-                el.style.height = '24px';
-                el.style.borderRadius = '50%';
-                el.style.backgroundColor = color;
-                el.style.border = '2px solid white';
+            // Create marker with custom element and popup
+            var marker = new mapboxgl.Marker({
+                element: el
+            })
+                .setLngLat([markerData.lng, markerData.lat])
+                .setPopup(popup)
+                .addTo(map);
+
+            // Add hover events for visual effects only
+            el.addEventListener('mouseenter', function () {
+                el.style.transform = 'scale(1.4)';
+                el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
+                el.style.zIndex = '10';
+                marker.togglePopup(); // Show popup
+            });
+
+            el.addEventListener('mouseleave', function () {
+                el.style.transform = 'scale(1)';
                 el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                el.style.cursor = 'pointer';
-                el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-                el.dataset.index = idx;
+                el.style.zIndex = '';
+                marker.togglePopup(); // Hide popup
+            });
 
-                // Create marker with custom element
-                var marker = new mapboxgl.Marker({
-                    element: el
-                })
-                    .setLngLat([lng, lat])
-                    .addTo(map);
-
-                // Add hover events - using captured coordinates from IIFE parameters
-                el.addEventListener('mouseenter', function () {
-                    el.style.transform = 'scale(1.4)';
-                    el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
-                    el.style.zIndex = '10';
-                    popup.setLngLat([lng, lat]).setText(label).addTo(map);
-                });
-
-                el.addEventListener('mouseleave', function () {
-                    el.style.transform = 'scale(1)';
-                    el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                    el.style.zIndex = '';
-                    popup.remove();
-                });
-
-                markerObjects.push(marker);
-            })(markerLng, markerLat, markerLabel, markerColor, index);
+            markerObjects.push(marker);
         });
 
         entry.markers = markers;
@@ -161,28 +152,32 @@ window.alletMap = {
     highlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var obj = entry.markerObjects[index];
-        if (!obj) return;
-        var el = obj.getElement();
+        var marker = entry.markerObjects[index];
+        if (!marker) return;
+
+        var el = marker.getElement();
         el.style.transform = 'scale(1.4)';
         el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
         el.style.zIndex = '10';
-        var m = entry.markers[index];
-        if (m && m.label) {
-            entry.popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(entry.map);
-        }
+
+        marker.togglePopup();
     },
 
     unhighlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var obj = entry.markerObjects[index];
-        if (!obj) return;
-        var el = obj.getElement();
+        var marker = entry.markerObjects[index];
+        if (!marker) return;
+
+        var el = marker.getElement();
         el.style.transform = 'scale(1)';
         el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         el.style.zIndex = '';
-        entry.popup.remove();
+
+        var popup = marker.getPopup();
+        if (popup && popup.isOpen()) {
+            marker.togglePopup();
+        }
     },
 
     bindTableHover: function (mapId, tableId) {
