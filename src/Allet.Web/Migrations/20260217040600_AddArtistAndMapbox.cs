@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -49,6 +49,34 @@ namespace Allet.Web.Migrations
                 name: "ix_productions_artist_id",
                 table: "productions",
                 column: "artist_id");
+
+            // Deduplicate productions: after dropping season, (source, slug) may have duplicates.
+            // Reassign shows and user_activities to the kept production (min id per source, slug), then delete duplicates.
+            migrationBuilder.Sql(@"
+                UPDATE shows s
+                SET production_id = k.kept_id
+                FROM productions p
+                JOIN (SELECT source, slug, MIN(id) AS kept_id FROM productions GROUP BY source, slug) k
+                  ON p.source = k.source AND p.slug = k.slug AND p.id != k.kept_id
+                WHERE s.production_id = p.id;
+            ");
+            migrationBuilder.Sql(@"
+                UPDATE user_activities u
+                SET production_id = k.kept_id
+                FROM productions p
+                JOIN (SELECT source, slug, MIN(id) AS kept_id FROM productions GROUP BY source, slug) k
+                  ON p.source = k.source AND p.slug = k.slug AND p.id != k.kept_id
+                WHERE u.production_id = p.id;
+            ");
+            migrationBuilder.Sql(@"
+                DELETE FROM productions
+                WHERE id IN (
+                    SELECT p.id FROM productions p
+                    JOIN (SELECT source, slug, MIN(id) AS kept_id FROM productions GROUP BY source, slug) k
+                      ON p.source = k.source AND p.slug = k.slug
+                    WHERE p.id != k.kept_id
+                );
+            ");
 
             migrationBuilder.CreateIndex(
                 name: "ix_productions_source_slug",
