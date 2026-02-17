@@ -52,6 +52,12 @@ builder.Services.AddHttpClient<CoeurDePirateScraper>(client =>
 });
 builder.Services.AddScoped<IScraperService, CoeurDePirateScraper>();
 
+builder.Services.AddHttpClient<MapboxGeocodingService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddScoped<IGeocodingService, MapboxGeocodingService>();
+
 builder.Services.AddScoped<ScraperOrchestrator>();
 builder.Services.AddScoped<OperaHuScraperJob>();
 builder.Services.AddScoped<WienerStaatsoperScraperJob>();

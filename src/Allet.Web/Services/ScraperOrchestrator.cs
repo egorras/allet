@@ -40,6 +40,7 @@ public class ScraperOrchestrator(
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
+        var geocoding = scope.ServiceProvider.GetService<IGeocodingService>();
 
         foreach (var scrapedProduction in result.Productions)
         {
@@ -49,7 +50,7 @@ public class ScraperOrchestrator(
 
                 foreach (var scrapedShow in scrapedProduction.Shows)
                 {
-                    await UpsertShowAsync(db, production, scrapedShow, cancellationToken);
+                    await UpsertShowAsync(db, production, scrapedShow, geocoding, cancellationToken);
                 }
 
                 result.UpdatedCount++;
@@ -137,9 +138,9 @@ public class ScraperOrchestrator(
     }
 
     private static async Task UpsertShowAsync(
-        AlletDbContext db, Production production, ScrapedShow scraped, CancellationToken cancellationToken)
+        AlletDbContext db, Production production, ScrapedShow scraped, IGeocodingService? geocoding, CancellationToken cancellationToken)
     {
-        var venue = await GetOrCreateVenueAsync(db, scraped.VenueName, cancellationToken);
+        var venue = await GetOrCreateVenueAsync(db, scraped.VenueName, geocoding, cancellationToken);
 
         var existing = await db.Shows
             .FirstOrDefaultAsync(s =>
@@ -169,7 +170,7 @@ public class ScraperOrchestrator(
     }
 
     private static async Task<Venue> GetOrCreateVenueAsync(
-        AlletDbContext db, string? venueName, CancellationToken cancellationToken)
+        AlletDbContext db, string? venueName, IGeocodingService? geocoding, CancellationToken cancellationToken)
     {
         var name = venueName ?? "Unknown";
         var venue = await db.Venues
@@ -179,6 +180,16 @@ public class ScraperOrchestrator(
             return venue;
 
         venue = new Venue { Name = name };
+        if (geocoding is not null)
+        {
+            var result = await geocoding.GeocodeAsync(name, cancellationToken);
+            if (result is not null)
+            {
+                venue.Latitude = result.Latitude;
+                venue.Longitude = result.Longitude;
+                venue.Country = result.Country;
+            }
+        }
         db.Venues.Add(venue);
         await db.SaveChangesAsync(cancellationToken);
         return venue;

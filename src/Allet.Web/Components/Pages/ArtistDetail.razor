@@ -45,47 +45,78 @@ else
         </div>
     </div>
 
-    <h2 class="mt-4">Tours & productions <span class="badge bg-secondary">@artist.Productions.Count</span></h2>
+    <h2 class="mt-4">Tour dates <span class="badge bg-secondary">@allShows.Count</span></h2>
 
-    @if (artist.Productions.Count == 0)
+    @if (allShows.Count == 0)
     {
-        <div class="alert alert-info">No productions or tour dates for this artist yet.</div>
+        <div class="alert alert-info">No shows for this artist yet.</div>
     }
     else
     {
-        @foreach (var production in artist.Productions.OrderByDescending(p => p.UpdatedAt))
-        {
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="productions/@production.Id" class="text-decoration-none">@production.Title</a>
-                    </h5>
-                    <p class="card-text text-muted small mb-2">@production.Source · @production.Shows.Count show(s)</p>
-                    @if (production.Shows.Count > 0)
+        <div class="row g-3 mb-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small mb-0">Country</label>
+                <select class="form-select form-select-sm" style="width: auto;" @bind="filterCountry" @bind:after="ApplyFilters">
+                    <option value="">All</option>
+                    @foreach (var c in countries)
                     {
-                        <ul class="list-unstyled mb-0">
-                            @foreach (var show in production.Shows.OrderBy(s => s.Date).Take(10))
-                            {
-                                <li class="small">
-                                    @show.Date?.ToString("yyyy-MM-dd") — @(show.Venue?.Name ?? "?")
-                                    @if (!string.IsNullOrEmpty(show.Url))
-                                    {
-                                        <a href="@show.Url" target="_blank" rel="noopener" class="ms-1">Tickets</a>
-                                    }
-                                </li>
-                            }
-                            @if (production.Shows.Count > 10)
-                            {
-                                <li class="small text-muted">… and @(production.Shows.Count - 10) more</li>
-                            }
-                        </ul>
+                        <option value="@c">@c</option>
                     }
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">From</label>
+                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateFrom" @bind:after="ApplyFilters" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0">To</label>
+                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateTo" @bind:after="ApplyFilters" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-3 mb-lg-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Venue</th>
+                                <th>Production</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in filteredShows)
+                            {
+                                <tr>
+                                    <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
+                                    <td>@(item.Venue?.Name ?? "—")</td>
+                                    <td>
+                                        <a href="productions/@item.Production.Id" class="text-decoration-none">@item.Production.Title</a>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Show.Url))
+                                        {
+                                            <a href="@item.Show.Url" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Tickets</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (filteredShows.Count == 0 && allShows.Count > 0)
+                {
+                    <p class="text-muted small">No shows match the current filters.</p>
+                }
+            </div>
+            <div class="col-lg-6">
+                <div class="sticky-top" style="top: 1rem;">
+                    <Map key="@filterKey" Markers="@mapMarkers" AccessToken="@mapboxToken" />
                 </div>
             </div>
-        }
-
-        <h2 class="mt-4">Tour map</h2>
-        <Map Markers="@mapMarkers" AccessToken="@mapboxToken" />
+        </div>
     }
 }
 
@@ -93,8 +124,18 @@ else
     [Parameter] public int Id { get; set; }
 
     private Artist? artist;
+    private List<ShowWithContext> allShows = [];
+    private List<ShowWithContext> filteredShows = [];
     private List<MapMarker> mapMarkers = [];
+    private List<string> countries = [];
     private string? mapboxToken;
+
+    private string filterCountry = "";
+    private string? filterDateFrom;
+    private string? filterDateTo;
+    private string filterKey => $"{filterCountry}|{filterDateFrom ?? ""}|{filterDateTo ?? ""}";
+
+    private sealed record ShowWithContext(Show Show, Production Production, Venue? Venue);
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,25 +155,77 @@ else
 
         foreach (var production in artist.Productions)
         {
-            foreach (var show in production.Shows.Where(s => s.Venue != null))
+            foreach (var show in production.Shows)
             {
-                var v = show.Venue!;
-                var (lat, lng) = TryGetCoordinates(v);
-                if (lat.HasValue && lng.HasValue)
+                allShows.Add(new ShowWithContext(show, production, show.Venue));
+            }
+        }
+        allShows = allShows.OrderBy(x => x.Show.Date).ToList();
+
+        countries = allShows
+            .Select(x => GetCountry(x.Venue))
+            .Where(c => !string.IsNullOrEmpty(c))
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        DateTime? from = null;
+        DateTime? to = null;
+        if (!string.IsNullOrEmpty(filterDateFrom) && DateTime.TryParse(filterDateFrom, out var fromParsed))
+            from = fromParsed;
+        if (!string.IsNullOrEmpty(filterDateTo) && DateTime.TryParse(filterDateTo, out var toParsed))
+            to = toParsed;
+
+        filteredShows = allShows.Where(x =>
+        {
+            if (!string.IsNullOrEmpty(filterCountry) && !string.Equals(GetCountry(x.Venue), filterCountry, StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (from.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date < from.Value.Date))
+                return false;
+            if (to.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date > to.Value.Date))
+                return false;
+            return true;
+        }).ToList();
+
+        mapMarkers = [];
+        foreach (var item in filteredShows.Where(x => x.Venue != null))
+        {
+            var (lat, lng) = GetCoordinates(item.Venue!);
+            if (lat.HasValue && lng.HasValue)
+            {
+                var dateStr = item.Show.Date?.ToString("yyyy-MM-dd") ?? "—";
+                mapMarkers.Add(new MapMarker
                 {
-                    mapMarkers.Add(new MapMarker
-                    {
-                        Label = v.Name,
-                        Lat = lat.Value,
-                        Lng = lng.Value
-                    });
-                }
+                    Label = $"{item.Venue!.Name} · {dateStr}",
+                    Lat = lat.Value,
+                    Lng = lng.Value
+                });
             }
         }
     }
 
-    private static (double?, double?) TryGetCoordinates(Venue venue)
+    private static string? GetCountry(Venue? venue)
     {
+        if (venue is null) return null;
+        if (!string.IsNullOrWhiteSpace(venue.Country)) return venue.Country;
+        var name = (venue.Name + " " + (venue.City ?? "")).ToLowerInvariant();
+        if (name.Contains("paris") || name.Contains("lyon") || name.Contains("strasbourg") || name.Contains("ostwald")) return "France";
+        if (name.Contains("montreal") || name.Contains("montréal") || name.Contains("quebec")) return "Canada";
+        if (name.Contains("brussels") || name.Contains("bruxelles")) return "Belgium";
+        if (name.Contains("new york")) return "United States";
+        if (name.Contains("london")) return "United Kingdom";
+        return null;
+    }
+
+    private static (double?, double?) GetCoordinates(Venue venue)
+    {
+        if (venue.Latitude.HasValue && venue.Longitude.HasValue)
+            return (venue.Latitude.Value, venue.Longitude.Value);
         var name = (venue.Name + " " + (venue.City ?? "")).ToLowerInvariant();
         if (name.Contains("paris")) return (48.8566, 2.3522);
         if (name.Contains("montreal") || name.Contains("montréal")) return (45.5017, -73.5673);
