@@ -1,0 +1,108 @@
+@using Allet.Web.Models
+
+@if (Visible)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @if (DesiredStatus == ProductionUserStatus.Archived) { <text>Archive Production</text> }
+                        else if (DesiredStatus == ProductionUserStatus.Watched) { <text>Log Watched</text> }
+                        else if (DesiredStatus == ProductionUserStatus.Planned) { <text>Plan to Watch</text> }
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="OnCancel"></button>
+                </div>
+                <div class="modal-body">
+                    @if (DesiredStatus == ProductionUserStatus.Archived)
+                    {
+                        <p>Are you sure you want to archive <strong>@Production?.Title</strong>?</p>
+                    }
+                    else if (DesiredStatus == ProductionUserStatus.Watched)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Date Watched</label>
+                            <input type="date" class="form-control" @bind="DateWatched" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Show (Optional)</label>
+                            <select class="form-select" @bind="SelectedShowId">
+                                <option value="">-- Select Show --</option>
+                                @if (Production?.Shows != null)
+                                {
+                                    @foreach (var show in Production.Shows.OrderByDescending(s => s.Date))
+                                    {
+                                        <option value="@show.Id">@($"{show.Date:d MMM yyyy HH:mm} - {show.Venue?.Name}")</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    }
+                    else if (DesiredStatus == ProductionUserStatus.Planned)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Select Show</label>
+                            <select class="form-select" @bind="SelectedShowId">
+                                <option value="">-- Select Show --</option>
+                                @if (Production?.Shows != null)
+                                {
+                                    @foreach (var show in Production.Shows.Where(s => s.Date > DateTime.UtcNow).OrderBy(s => s.Date))
+                                    {
+                                        <option value="@show.Id">@($"{show.Date:d MMM yyyy HH:mm} - {show.Venue?.Name}")</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    }
+                    
+                    <div class="mb-3">
+                         <label class="form-label">Note</label>
+                         <textarea class="form-control" rows="2" @bind="Note"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="Save">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public Production? Production { get; set; }
+    [Parameter] public ProductionUserStatus DesiredStatus { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<UserProductionActivity> OnSave { get; set; }
+
+    private DateOnly DateWatched { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    private int? SelectedShowId { get; set; }
+    private string? Note { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Visible)
+        {
+            // Reset state when opening
+             if (DesiredStatus == ProductionUserStatus.Watched)
+             {
+                 DateWatched = DateOnly.FromDateTime(DateTime.Today);
+             }
+        }
+    }
+
+    private async Task Save()
+    {
+        var activity = new UserProductionActivity
+        {
+            ProductionId = Production?.Id ?? 0,
+            Status = DesiredStatus,
+            Note = Note,
+            WatchedDate = DesiredStatus == ProductionUserStatus.Watched ? DateWatched : null,
+            ShowId = SelectedShowId
+        };
+        
+        await OnSave.InvokeAsync(activity);
+    }
+}

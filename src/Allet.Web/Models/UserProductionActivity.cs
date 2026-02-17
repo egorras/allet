@@ -18,6 +18,9 @@ public class UserProductionActivity
     public ProductionUserStatus Status { get; set; }
     public string? Note { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateOnly? WatchedDate { get; set; }
+    public int? ShowId { get; set; }
 
     public Production Production { get; set; } = null!;
+    public Show? Show { get; set; }
 }

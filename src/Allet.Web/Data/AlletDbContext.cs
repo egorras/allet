@@ -50,6 +50,11 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
 
             entity.HasIndex(a => new { a.UserId, a.ProductionId })
                 .IsUnique();
+
+            entity.HasOne(a => a.Show)
+                .WithMany()
+                .HasForeignKey(a => a.ShowId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

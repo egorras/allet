@@ -3,6 +3,7 @@
 @using Allet.Web.Models
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using Microsoft.EntityFrameworkCore
+@using Allet.Web.Components.Shared
 @inject AlletDbContext Db
 @rendermode InteractiveServer
 
@@ -123,6 +124,14 @@ else if (viewMode == "gallery")
                                 <span class="badge bg-info text-dark ms-1">Planned</span>
                             }
                         </h5>
+                        @if (isWatched && activity?.WatchedDate.HasValue == true)
+                        {
+                            <div class="small text-success fw-bold">Watched on @activity.WatchedDate.Value.ToString("d MMM yyyy")</div>
+                        }
+                        @if (isPlanned && activity?.Show != null && activity.Show.Date.HasValue)
+                        {
+                            <div class="small text-info fw-bold">Planned for @activity.Show.Date.Value.ToString("d MMM yyyy HH:mm")</div>
+                        }
                         <p class="card-text text-muted mb-1">@production.Season</p>
                         @if (venues.Count > 0)
                         {
@@ -159,10 +168,10 @@ else if (viewMode == "gallery")
                         <div class="mt-auto">
                             <span class="badge bg-secondary mb-2">@production.Shows.Count show(s)</span>
                             <div class="d-flex justify-content-end gap-1 status-action">
-                                <button class="btn btn-sm @(isWatched ? "btn-success" : "btn-outline-success")" @onclick="() => SetStatus(production.Id, ProductionUserStatus.Watched)" title="Mark as Watched">
+                                <button class="btn btn-sm @(isWatched ? "btn-success" : "btn-outline-success")" @onclick="() => SetStatus(production.Id, isWatched ? ProductionUserStatus.None : ProductionUserStatus.Watched)" title="Mark as Watched">
                                     <i class="bi bi-check-lg"></i> Watched
                                 </button>
-                                <button class="btn btn-sm @(isPlanned ? "btn-info" : "btn-outline-info")" @onclick="() => SetStatus(production.Id, ProductionUserStatus.Planned)" title="Mark as Planned">
+                                <button class="btn btn-sm @(isPlanned ? "btn-info" : "btn-outline-info")" @onclick="() => SetStatus(production.Id, isPlanned ? ProductionUserStatus.None : ProductionUserStatus.Planned)" title="Mark as Planned">
                                     <i class="bi bi-calendar-event"></i> Planned
                                 </button>
                                 <button class="btn btn-sm @(isArchived ? "btn-secondary" : "btn-outline-secondary")" @onclick="() => SetStatus(production.Id, isArchived ? ProductionUserStatus.None : ProductionUserStatus.Archived)" title="Archive">
@@ -237,6 +246,14 @@ else
                                 else if (userStatus == ProductionUserStatus.Planned)
                                 {
                                     <span class="badge bg-info text-dark">Planned</span>
+                                    @if (activity?.Show != null && activity.Show.Date.HasValue)
+                                    {
+                                        <div class="small text-muted">@activity.Show.Date.Value.ToString("d MMM yyyy HH:mm")</div>
+                                    }
+                                }
+                                @if (userStatus == ProductionUserStatus.Watched && activity?.WatchedDate.HasValue == true)
+                                {
+                                     <div class="small text-muted">@activity.WatchedDate.Value.ToString("d MMM yyyy")</div>
                                 }
                             </td>
                         }
@@ -260,7 +277,12 @@ else
     </div>
 }
 
-
+<ProductionStatusModal 
+    Visible="@showStatusModal" 
+    Production="@selectedProduction" 
+    DesiredStatus="@desiredStatus" 
+    OnCancel="@(() => showStatusModal = false)" 
+    OnSave="@HandleStatusSave" />
 
 @code {
     private const string currentUserId = "default";
@@ -278,6 +300,9 @@ else
     private bool showWatched;
     private bool showPlanned;
 
+    private bool showStatusModal;
+    private Production? selectedProduction;
+    private ProductionUserStatus desiredStatus;
 
 
     protected override async Task OnInitializedAsync()
@@ -300,6 +325,7 @@ else
         // Let's load activities for current user and use that to filter IDs.
         
         var myActivities = await Db.UserActivities
+            .Include(a => a.Show)
             .Where(a => a.UserId == currentUserId)
             .ToListAsync();
             
@@ -384,31 +410,50 @@ else
 
         if (status == ProductionUserStatus.None)
         {
+             // Direct remove/unset
             if (activity is not null)
             {
                 Db.UserActivities.Remove(activity);
+                await Db.SaveChangesAsync();
+                await LoadProductionsAsync();
             }
         }
         else
         {
-            if (activity is null)
-            {
-                activity = new UserProductionActivity
-                {
-                    ProductionId = productionId,
-                    UserId = currentUserId,
-                    Status = status
-                };
-                Db.UserActivities.Add(activity);
-            }
-            else
-            {
-                activity.Status = status;
-                activity.UpdatedAt = DateTime.UtcNow;
-            }
+             // Open modal for Watched, Planned, or Archived (new action)
+             var prod = productions?.FirstOrDefault(p => p.Id == productionId);
+             if (prod != null)
+             {
+                 selectedProduction = prod;
+                 desiredStatus = status;
+                 showStatusModal = true;
+             }
         }
-        
+    }
+
+    private async Task HandleStatusSave(UserProductionActivity newActivity)
+    {
+        var activity = await Db.UserActivities
+            .FirstOrDefaultAsync(a => a.ProductionId == newActivity.ProductionId && a.UserId == currentUserId);
+
+        if (activity is null)
+        {
+            newActivity.UserId = currentUserId;
+            // Ensure ID is 0 so it inserts
+            newActivity.Id = 0; 
+            Db.UserActivities.Add(newActivity);
+        }
+        else
+        {
+            activity.Status = newActivity.Status;
+            activity.Note = newActivity.Note;
+            activity.WatchedDate = newActivity.WatchedDate;
+            activity.ShowId = newActivity.ShowId;
+            activity.UpdatedAt = DateTime.UtcNow;
+        }
+
         await Db.SaveChangesAsync();
+        showStatusModal = false;
         await LoadProductionsAsync();
     }
     
