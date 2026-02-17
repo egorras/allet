@@ -103,8 +103,8 @@ window.alletMap = {
             // Create custom HTML element for the marker
             var el = document.createElement('div');
             el.className = 'custom-marker';
-            el.style.width = '24px';
-            el.style.height = '24px';
+            el.style.width = '18px';
+            el.style.height = '18px';
             el.style.borderRadius = '50%';
             el.style.backgroundColor = markerData.color;
             el.style.border = '2px solid white';
@@ -198,6 +198,8 @@ window.alletMap = {
         var table = document.getElementById(tableId);
         if (!table) return;
         var currentRow = null;
+        var entry = this._maps[mapId];
+
         table.addEventListener('mouseover', function (e) {
             var row = e.target.closest('tr[data-marker]');
             if (row === currentRow) return;
@@ -211,11 +213,30 @@ window.alletMap = {
                 if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
             }
         });
+
         table.addEventListener('mouseleave', function () {
             if (currentRow) {
                 var idx = parseInt(currentRow.dataset.marker, 10);
                 if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
                 currentRow = null;
+            }
+        });
+
+        // Add click handler to pan to marker
+        table.addEventListener('click', function (e) {
+            var row = e.target.closest('tr[data-marker]');
+            if (row && entry) {
+                var idx = parseInt(row.dataset.marker, 10);
+                if (!isNaN(idx) && idx >= 0) {
+                    var marker = entry.markers[idx];
+                    if (marker) {
+                        entry.map.flyTo({
+                            center: [marker.lng, marker.lat],
+                            zoom: 12,
+                            duration: 1000
+                        });
+                    }
+                }
             }
         });
     }
