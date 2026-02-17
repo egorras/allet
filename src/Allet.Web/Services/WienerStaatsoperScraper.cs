@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
-using Allet.Web.Services.Pages;
 using Microsoft.Extensions.Options;
 
 namespace Allet.Web.Services;
@@ -34,7 +33,7 @@ public class WienerStaatsoperScraper(
             {
                 var monthDate = currentMonth.AddMonths(i);
                 var monthUrl = $"{BaseUrl}/en/calendar/{monthDate.Year}/{monthDate.ToString("MMMM", CultureInfo.InvariantCulture).ToLower()}/";
-                
+
                 logger.LogInformation("Scraping calendar: {Url}", monthUrl);
                 var html = await FetchPageAsync(monthUrl, cancellationToken);
                 if (html != null)
@@ -46,7 +45,7 @@ public class WienerStaatsoperScraper(
                     }
                     logger.LogInformation("Found {Count} events in {Month}", urls.Count, monthDate.ToString("MMMM yyyy"));
                 }
-                
+
                 await Task.Delay(_options.DelayMs, cancellationToken);
             }
 
@@ -100,7 +99,7 @@ public class WienerStaatsoperScraper(
         foreach (Match match in regex.Matches(html))
         {
             var url = match.Groups[1].Value;
-             if (!url.StartsWith("http"))
+            if (!url.StartsWith("http"))
             {
                 url = BaseUrl + url;
             }
@@ -124,7 +123,7 @@ public class WienerStaatsoperScraper(
         // We might need to fetch others if we want exact times for all, 
         // but let's assume valid metadata is on the first one.
         // Actually, we need to fetch ALL to get the times for each show.
-        
+
         ScrapedProduction? production = null;
 
         foreach (var url in eventUrls)
@@ -154,7 +153,7 @@ public class WienerStaatsoperScraper(
         // Extract Title
         var titleMatch = Regex.Match(html, @"<h1[^>]*>(.*?)</h1>", RegexOptions.Singleline);
         var title = titleMatch.Success ? WebUtility.HtmlDecode(titleMatch.Groups[1].Value).Trim() : slug;
-        
+
         // Remove tags from title if any
         title = Regex.Replace(title, @"<[^>]+>", "").Trim();
 
@@ -195,9 +194,9 @@ public class WienerStaatsoperScraper(
         // I'll guess a regex for now, maybe refined later.
         // Looking for HH:MM pattern near "Beginn" or just standalone time.
         // Let's look for the first HH:MM that is not duration.
-        var timeMatch = Regex.Match(html, @"(\d{1,2}:\d{2})\s*(?:Uhr|h|–)"); 
+        var timeMatch = Regex.Match(html, @"(\d{1,2}:\d{2})\s*(?:Uhr|h|–)");
         // This is risky.
-        
+
         // Alternative: Look for specific structured data or meta tags?
         // ld+json often has it.
         var jsonLdMatch = Regex.Match(html, @"<script type=""application/ld\+json"">([\s\S]*?)</script>");
@@ -221,7 +220,7 @@ public class WienerStaatsoperScraper(
         // Fallback: Default to noon if time not found, or try to parse text?
         // Let's loop 19:00 as default for evening opera if unsure? No, better to be safe.
         // I'll leave time as 00:00 if not found, preserving the date.
-        
+
         return new ScrapedShow
         {
             Title = title,

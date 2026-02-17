@@ -10,6 +10,7 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<UserProductionActivity> UserActivities => Set<UserProductionActivity>();
+    public DbSet<ActivityHistory> ActivityHistories => Set<ActivityHistory>();
     public DbSet<Artist> Artists => Set<Artist>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -60,6 +61,22 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
                 .WithMany()
                 .HasForeignKey(a => a.ShowId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<ActivityHistory>(entity =>
+        {
+            entity.HasOne(h => h.Production)
+                .WithMany()
+                .HasForeignKey(h => h.ProductionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(h => h.Show)
+                .WithMany()
+                .HasForeignKey(h => h.ShowId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(h => new { h.UserId, h.ProductionId, h.ChangedAt });
+            entity.HasIndex(h => h.ChangedAt);
         });
     }
 }

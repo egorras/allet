@@ -64,6 +64,10 @@ builder.Services.AddHttpClient<MapboxGeocodingService>(client =>
 });
 builder.Services.AddScoped<IGeocodingService, MapboxGeocodingService>();
 
+// Activity tracking services
+builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<ActivityHistoryService>();
+
 builder.Services.AddScoped<ScraperOrchestrator>();
 builder.Services.AddScoped<OperaHuScraperJob>();
 builder.Services.AddScoped<WienerStaatsoperScraperJob>();

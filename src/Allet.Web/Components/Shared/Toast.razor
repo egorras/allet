@@ -1,0 +1,90 @@
+@using Allet.Web.Services
+@implements IDisposable
+@inject ToastService ToastService
+
+<div class="toast-container">
+    @foreach (var toast in _toasts)
+    {
+        <div class="toast toast-@toast.Type.ToString().ToLower() @(toast.Id == _toasts.LastOrDefault()?.Id ? "toast-enter" : "")">
+            <div class="toast-icon">
+                @if (toast.Type == ToastType.Success)
+                {
+                    <i class="bi bi-check-circle-fill"></i>
+                }
+                else if (toast.Type == ToastType.Info)
+                {
+                    <i class="bi bi-info-circle-fill"></i>
+                }
+                else if (toast.Type == ToastType.Warning)
+                {
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                }
+                else if (toast.Type == ToastType.Error)
+                {
+                    <i class="bi bi-x-circle-fill"></i>
+                }
+            </div>
+            <div class="toast-message">@toast.Message</div>
+            <button class="toast-close" @onclick="() => RemoveToast(toast.Id)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ToastMessage> _toasts = new();
+    private Dictionary<string, System.Threading.Timer> _timers = new();
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += HandleShow;
+        ToastService.OnHide += HandleHide;
+    }
+
+    private void HandleShow(ToastMessage toast)
+    {
+        _toasts.Add(toast);
+        StateHasChanged();
+
+        // Auto-dismiss after 5 seconds
+        var timer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() => RemoveToast(toast.Id));
+        }, null, 5000, Timeout.Infinite);
+
+        _timers[toast.Id] = timer;
+    }
+
+    private void HandleHide(string id)
+    {
+        RemoveToast(id);
+    }
+
+    private void RemoveToast(string id)
+    {
+        var toast = _toasts.FirstOrDefault(t => t.Id == id);
+        if (toast != null)
+        {
+            _toasts.Remove(toast);
+            if (_timers.TryGetValue(id, out var timer))
+            {
+                timer.Dispose();
+                _timers.Remove(id);
+            }
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= HandleShow;
+        ToastService.OnHide -= HandleHide;
+        
+        foreach (var timer in _timers.Values)
+        {
+            timer.Dispose();
+        }
+        _timers.Clear();
+    }
+}

@@ -1,0 +1,194 @@
+@page "/history"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Allet.Web.Services
+@using Microsoft.EntityFrameworkCore
+@inject ActivityHistoryService HistoryService
+@inject ToastService ToastService
+@rendermode InteractiveServer
+
+<PageTitle>Activity History - Allet</PageTitle>
+
+<h1>Activity History</h1>
+<p>View and manage your production activity history.</p>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label class="form-label">Filter by Production</label>
+        <input type="text" class="form-control" @bind="searchQuery" @bind:event="oninput" @bind:after="LoadHistory" placeholder="Search productions..." />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">From Date</label>
+        <input type="date" class="form-control" @bind="fromDate" @bind:after="LoadHistory" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">To Date</label>
+        <input type="date" class="form-control" @bind="toDate" @bind:after="LoadHistory" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-secondary w-100" @onclick="ClearFilters">Clear Filters</button>
+    </div>
+</div>
+
+@if (history == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (filteredHistory.Count == 0)
+{
+    <div class="alert alert-info">No activity history found.</div>
+}
+else
+{
+    <div class="timeline">
+        @foreach (var item in filteredHistory)
+        {
+            <div class="timeline-item">
+                <div class="timeline-marker timeline-marker-@GetStatusColor(item.NewStatus)"></div>
+                <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">@item.Production.Title</h5>
+                            <div class="text-muted small mb-2">
+                                <i class="bi bi-clock"></i> @item.ChangedAt.ToString("dd MMM yyyy HH:mm")
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge bg-@GetStatusColor(item.PreviousStatus)">@item.PreviousStatus</span>
+                                <i class="bi bi-arrow-right mx-2"></i>
+                                <span class="badge bg-@GetStatusColor(item.NewStatus)">@item.NewStatus</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Note))
+                            {
+                                <div class="text-muted small">
+                                    <i class="bi bi-sticky"></i> @item.Note
+                                </div>
+                            }
+                            @if (item.WatchedDate.HasValue)
+                            {
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar-check"></i> Watched on @item.WatchedDate.Value.ToString("dd MMM yyyy")
+                                </div>
+                            }
+                            @if (item.Show != null)
+                            {
+                                <div class="text-muted small">
+                                    <i class="bi bi-geo-alt"></i> @item.Show.Date?.ToString("dd MMM yyyy HH:mm") - @item.Show.Venue?.Name
+                                </div>
+                            }
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowRevertConfirmation(item)">
+                            <i class="bi bi-arrow-counterclockwise"></i> Revert
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (showRevertModal && selectedHistory != null)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Revert</h5>
+                    <button type="button" class="btn-close" @onclick="() => showRevertModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to revert this action?</p>
+                    <div class="alert alert-info">
+                        <strong>@selectedHistory.Production.Title</strong> will be changed from 
+                        <span class="badge bg-@GetStatusColor(selectedHistory.NewStatus)">@selectedHistory.NewStatus</span>
+                        back to 
+                        <span class="badge bg-@GetStatusColor(selectedHistory.PreviousStatus)">@selectedHistory.PreviousStatus</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => showRevertModal = false">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmRevert">Confirm Revert</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const string currentUserId = "default";
+    private List<ActivityHistory>? history;
+    private List<ActivityHistory> filteredHistory = new();
+    private string searchQuery = "";
+    private DateTime? fromDate;
+    private DateTime? toDate;
+    private bool showRevertModal;
+    private ActivityHistory? selectedHistory;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHistory();
+    }
+
+    private async Task LoadHistory()
+    {
+        history = await HistoryService.GetHistory(
+            currentUserId,
+            fromDate: fromDate,
+            toDate: toDate
+        );
+
+        // Apply search filter
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredHistory = history;
+        }
+        else
+        {
+            filteredHistory = history
+                .Where(h => h.Production.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        searchQuery = "";
+        fromDate = null;
+        toDate = null;
+        filteredHistory = history ?? new();
+    }
+
+    private void ShowRevertConfirmation(ActivityHistory item)
+    {
+        selectedHistory = item;
+        showRevertModal = true;
+    }
+
+    private async Task ConfirmRevert()
+    {
+        if (selectedHistory == null) return;
+
+        var success = await HistoryService.RevertToHistory(selectedHistory.Id, currentUserId);
+        
+        if (success)
+        {
+            ToastService.ShowSuccess($"Reverted {selectedHistory.Production.Title} to {selectedHistory.PreviousStatus}");
+            showRevertModal = false;
+            await LoadHistory();
+        }
+        else
+        {
+            ToastService.ShowError("Failed to revert action");
+        }
+    }
+
+    private string GetStatusColor(ProductionUserStatus status)
+    {
+        return status switch
+        {
+            ProductionUserStatus.Watched => "success",
+            ProductionUserStatus.Planned => "primary",
+            ProductionUserStatus.Archived => "secondary",
+            _ => "light"
+        };
+    }
+}

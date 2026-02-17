@@ -1,10 +1,13 @@
 @page "/productions"
 @using Allet.Web.Data
 @using Allet.Web.Models
+@using Allet.Web.Services
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using Microsoft.EntityFrameworkCore
 @using Allet.Web.Components.Shared
 @inject AlletDbContext Db
+@inject ToastService ToastService
+@inject ActivityHistoryService HistoryService
 @rendermode InteractiveServer
 
 <PageTitle>Productions - Allet</PageTitle>
@@ -309,8 +312,21 @@ else
              // Direct remove/unset
             if (activity is not null)
             {
+                var previousStatus = activity.Status;
+                await HistoryService.RecordChange(
+                    currentUserId,
+                    productionId,
+                    previousStatus,
+                    ProductionUserStatus.None,
+                    "Removed status"
+                );
+                
                 Db.UserActivities.Remove(activity);
                 await Db.SaveChangesAsync();
+                
+                var prod = productions?.FirstOrDefault(p => p.Id == productionId);
+                ToastService.ShowSuccess($"Removed status from {prod?.Title}");
+                
                 await LoadProductionsAsync();
             }
         }
@@ -332,6 +348,19 @@ else
         var activity = await Db.UserActivities
             .FirstOrDefaultAsync(a => a.ProductionId == newActivity.ProductionId && a.UserId == currentUserId);
 
+        var previousStatus = activity?.Status ?? ProductionUserStatus.None;
+        
+        // Record history
+        await HistoryService.RecordChange(
+            currentUserId,
+            newActivity.ProductionId,
+            previousStatus,
+            newActivity.Status,
+            newActivity.Note,
+            newActivity.WatchedDate,
+            newActivity.ShowId
+        );
+
         if (activity is null)
         {
             newActivity.UserId = currentUserId;
@@ -349,6 +378,17 @@ else
         }
 
         await Db.SaveChangesAsync();
+        
+        // Show toast notification
+        var statusText = newActivity.Status switch
+        {
+            ProductionUserStatus.Watched => "marked as watched",
+            ProductionUserStatus.Planned => "planned to watch",
+            ProductionUserStatus.Archived => "archived",
+            _ => "updated"
+        };
+        ToastService.ShowSuccess($"{selectedProduction?.Title} {statusText}");
+        
         showStatusModal = false;
         await LoadProductionsAsync();
     }

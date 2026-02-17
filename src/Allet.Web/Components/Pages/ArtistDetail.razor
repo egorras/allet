@@ -48,35 +48,35 @@ else
 
     <h2 class="mt-4">Tour dates <span class="badge bg-secondary">@allShows.Count</span></h2>
 
-    @if (allShows.Count == 0)
-    {
-        <div class="alert alert-info">No shows for this artist yet.</div>
-    }
-    else
-    {
-        <div class="row g-3 mb-3 align-items-end">
-            <div class="col-auto">
-                <label class="form-label small mb-0">Country</label>
-                <select class="form-select form-select-sm" style="width: auto;" @bind="filterCountry" @bind:after="ApplyFilters">
-                    <option value="">All</option>
-                    @foreach (var c in countries)
-                    {
-                        <option value="@c">@c</option>
-                    }
-                </select>
-            </div>
-            <div class="col-auto">
-                <label class="form-label small mb-0">From</label>
-                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateFrom" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
-            </div>
-            <div class="col-auto">
-                <label class="form-label small mb-0">To</label>
-                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateTo" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
-            </div>
-        </div>
+    <div class="row">
+        <div class="col-lg-6 mb-3 mb-lg-0">
+            @if (allShows.Count == 0)
+            {
+                <div class="alert alert-info">No shows for this artist yet.</div>
+            }
+            else
+            {
+                <div class="row g-3 mb-3 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label small mb-0">Country</label>
+                        <select class="form-select form-select-sm" style="width: auto;" @bind="filterCountry" @bind:after="ApplyFilters">
+                            <option value="">All</option>
+                            @foreach (var c in countries)
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-0">From</label>
+                        <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateFrom" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-0">To</label>
+                        <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateTo" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
+                    </div>
+                </div>
 
-        <div class="row">
-            <div class="col-lg-6 mb-3 mb-lg-0">
                 <div class="table-responsive">
                     <table id="@tableId" class="table table-sm table-hover">
                         <thead>
@@ -117,14 +117,14 @@ else
                 {
                     <p class="text-muted small">No shows match the current filters.</p>
                 }
-            </div>
-            <div class="col-lg-6">
-                <div class="sticky-top" style="top: 1rem;">
-                    <Map @ref="mapRef" @key="filterKey" Markers="@mapMarkers" AccessToken="@mapboxToken" />
-                </div>
+            }
+        </div>
+        <div class="col-lg-6">
+            <div class="sticky-top" style="top: 1rem;">
+                <Map @ref="mapRef" Markers="@mapMarkers" AccessToken="@mapboxToken" />
             </div>
         </div>
-    }
+    </div>
 }
 
 @code {
@@ -140,7 +140,6 @@ else
     private string filterCountry = "";
     private DateTime? filterDateFrom;
     private DateTime? filterDateTo;
-    private string filterKey => $"{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
 
     private Map? mapRef;
     private string tableId = "artist-table-" + Guid.NewGuid().ToString("N")[..8];
