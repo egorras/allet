@@ -18,6 +18,15 @@
 }
     <div class="row g-2 align-items-center mb-3">
         <div class="col-auto">
+            <select class="form-select" @bind="selectedSource" @bind:after="LoadAsync">
+                <option value="">All sources</option>
+                @foreach (var s in sources)
+                {
+                    <option value="@s">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
             <select class="form-select" @bind="selectedVenue" @bind:after="LoadAsync">
                 <option value="">All venues</option>
                 @foreach (var v in venues)
@@ -62,31 +71,41 @@ else
     private ProductionUserStatus desiredStatus;
 
     private List<string> venues = [];
+    private List<string> sources = [];
     private string selectedVenue = "";
+    private string selectedSource = "";
 
     protected override async Task OnInitializedAsync()
     {
-        using var scope = ScopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
-        venues = await db.Venues
-            .Where(v => v.Shows.Any(s => s.Production.ArtistId == null))
-            .Select(v => v.Name).Distinct().OrderBy(n => n).ToListAsync();
         await LoadAsync();
     }
 
     private async Task LoadAsync()
     {
         var now = DateTime.UtcNow;
-        
+
         using var scope = ScopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AlletDbContext>();
 
-        // Optimize: AsSplitQuery
-        var query = db.Productions
+        // Base feed query: productions the user hasn't acted on, with future shows
+        var baseQuery = db.Productions
             .AsNoTracking()
             .Include(p => p.Shows).ThenInclude(s => s.Venue)
             .Where(p => !db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status != ProductionUserStatus.None))
             .Where(p => p.Shows.Any(s => !s.Date.HasValue || s.Date > now));
+
+        // Populate filter options from the feed productions only
+        sources = await baseQuery.Select(p => p.Source).Distinct().OrderBy(s => s).ToListAsync();
+        venues = await baseQuery.SelectMany(p => p.Shows)
+            .Where(s => s.Venue != null)
+            .Select(s => s.Venue!.Name).Distinct().OrderBy(n => n).ToListAsync();
+
+        var query = baseQuery;
+
+        if (!string.IsNullOrEmpty(selectedSource))
+        {
+            query = query.Where(p => p.Source == selectedSource);
+        }
 
         if (!string.IsNullOrEmpty(selectedVenue))
         {

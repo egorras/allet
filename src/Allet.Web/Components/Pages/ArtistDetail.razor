@@ -78,7 +78,7 @@ else
         <div class="row">
             <div class="col-lg-6 mb-3 mb-lg-0">
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover">
+                    <table id="@tableId" class="table table-sm table-hover">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -90,7 +90,7 @@ else
                             @foreach (var item in filteredShows)
                             {
                                 var idx = item.MarkerIndex;
-                                <tr style="cursor: pointer;" @onmouseenter="() => HighlightMarker(idx)" @onmouseleave="() => UnhighlightMarker(idx)">
+                                <tr style="cursor: pointer;" data-marker="@idx">
                                     <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         @(item.Venue?.Name ?? "—")
@@ -140,6 +140,7 @@ else
     private string filterKey => $"{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
 
     private Map? mapRef;
+    private string tableId = "artist-table-" + Guid.NewGuid().ToString("N")[..8];
 
     private sealed record ShowWithContext(Show Show, Production Production, Venue? Venue)
     {
@@ -182,6 +183,20 @@ else
         ApplyFilters();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && mapRef is not null)
+        {
+            // Small delay to let the map init complete first
+            await Task.Delay(200);
+            try
+            {
+                await JS.InvokeVoidAsync("window.alletMap.bindTableHover", mapRef.MapId, tableId);
+            }
+            catch { }
+        }
+    }
+
     private void ApplyFilters()
     {
         filteredShows = allShows.Where(x =>
@@ -214,18 +229,6 @@ else
                 item.MarkerIndex = markerIdx++;
             }
         }
-    }
-
-    private async Task HighlightMarker(int index)
-    {
-        if (index < 0 || mapRef is null) return;
-        await JS.InvokeVoidAsync("window.alletMap.highlight", mapRef.MapId, index);
-    }
-
-    private async Task UnhighlightMarker(int index)
-    {
-        if (index < 0 || mapRef is null) return;
-        await JS.InvokeVoidAsync("window.alletMap.unhighlight", mapRef.MapId, index);
     }
 
     private static string? GetCountry(Venue? venue)

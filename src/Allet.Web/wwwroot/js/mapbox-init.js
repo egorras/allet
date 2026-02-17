@@ -22,47 +22,74 @@ window.alletMap = {
             });
             map.fitBounds(bounds, { padding: 40, maxZoom: 10 });
         }
-        var markerEls = [];
+        var dotEls = [];
         var markerObjs = [];
         markers.forEach(function (m, i) {
             var el = document.createElement('div');
             el.className = 'mapbox-marker';
-            el.style.width = '12px';
-            el.style.height = '12px';
-            el.style.borderRadius = '50%';
+            el.style.width = '20px';
+            el.style.height = '20px';
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+            el.style.justifyContent = 'center';
+
+            var dot = document.createElement('div');
             var markerColor = m.color || '#4f46e5';
-            el.dataset.color = markerColor;
-            el.style.backgroundColor = markerColor;
-            el.style.border = '2px solid white';
-            el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3)';
-            el.style.transition = 'transform 0.15s, background-color 0.15s';
+            dot.dataset.color = markerColor;
+            dot.style.width = '12px';
+            dot.style.height = '12px';
+            dot.style.borderRadius = '50%';
+            dot.style.backgroundColor = markerColor;
+            dot.style.border = '2px solid white';
+            dot.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3)';
+            dot.style.transition = 'width 0.15s, height 0.15s, background-color 0.15s';
+            el.appendChild(dot);
+
             var popup = m.label ? new mapboxgl.Popup({ offset: 12 }).setText(m.label) : null;
             var marker = new mapboxgl.Marker(el).setLngLat([m.lng, m.lat]).setPopup(popup).addTo(map);
-            markerEls.push(el);
+            dotEls.push(dot);
             markerObjs.push(marker);
         });
-        this._maps[mapId] = { map: map, markerEls: markerEls, markerObjs: markerObjs };
+        this._maps[mapId] = { map: map, dotEls: dotEls, markerObjs: markerObjs };
     },
     highlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var el = entry.markerEls[index];
-        if (!el) return;
-        el.style.transform = 'scale(2.2)';
-        el.style.backgroundColor = '#f59e0b';
-        el.style.zIndex = '10';
+        var dot = entry.dotEls[index];
+        if (!dot) return;
+        dot.style.width = '22px';
+        dot.style.height = '22px';
+        dot.style.backgroundColor = '#f59e0b';
+        dot.parentElement.style.zIndex = '10';
         var marker = entry.markerObjs[index];
-        if (marker && marker.getPopup()) marker.togglePopup();
+        if (marker && marker.getPopup() && !marker.getPopup().isOpen()) marker.togglePopup();
     },
     unhighlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var el = entry.markerEls[index];
-        if (!el) return;
-        el.style.transform = '';
-        el.style.backgroundColor = el.dataset.color || '#4f46e5';
-        el.style.zIndex = '';
+        var dot = entry.dotEls[index];
+        if (!dot) return;
+        dot.style.width = '12px';
+        dot.style.height = '12px';
+        dot.style.backgroundColor = dot.dataset.color || '#4f46e5';
+        dot.parentElement.style.zIndex = '';
         var marker = entry.markerObjs[index];
         if (marker && marker.getPopup() && marker.getPopup().isOpen()) marker.togglePopup();
+    },
+    bindTableHover: function (mapId, tableId) {
+        var table = document.getElementById(tableId);
+        if (!table) return;
+        table.addEventListener('mouseenter', function (e) {
+            var row = e.target.closest('tr[data-marker]');
+            if (!row) return;
+            var idx = parseInt(row.dataset.marker, 10);
+            if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
+        }, true);
+        table.addEventListener('mouseleave', function (e) {
+            var row = e.target.closest('tr[data-marker]');
+            if (!row) return;
+            var idx = parseInt(row.dataset.marker, 10);
+            if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
+        }, true);
     }
 };

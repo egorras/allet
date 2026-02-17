@@ -87,7 +87,7 @@ else
         <div class="row">
             <div class="col-lg-6 mb-3 mb-lg-0">
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover">
+                    <table id="@tableId" class="table table-sm table-hover">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -101,7 +101,7 @@ else
                             {
                                 var idx = item.MarkerIndex;
                                 var color = GetArtistColor(item.ArtistId);
-                                <tr style="cursor: pointer; border-left: 3px solid @color;" @onmouseenter="() => HighlightMarker(idx)" @onmouseleave="() => UnhighlightMarker(idx)">
+                                <tr style="cursor: pointer; border-left: 3px solid @color;" data-marker="@idx">
                                     <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
                                     <td>
                                         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:@color;margin-right:4px;"></span>
@@ -166,6 +166,8 @@ else
     private string filterKey => $"{string.Join(",", selectedArtistIds.OrderBy(x => x))}|{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
 
     private Map? mapRef;
+    private string tableId = "compare-table-" + Guid.NewGuid().ToString("N")[..8];
+    private bool needsTableBind;
 
     private sealed record ShowWithContext(Show Show, Venue? Venue, int ArtistId, string ArtistName)
     {
@@ -176,6 +178,19 @@ else
     {
         mapboxToken = Config["Mapbox:AccessToken"];
         allArtists = await Db.Artists.OrderBy(a => a.Name).ToListAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (needsTableBind && mapRef is not null)
+        {
+            needsTableBind = false;
+            try
+            {
+                await JS.InvokeVoidAsync("window.alletMap.bindTableHover", mapRef.MapId, tableId);
+            }
+            catch { }
+        }
     }
 
     private string GetArtistColor(int artistId)
@@ -190,6 +205,7 @@ else
             selectedArtistIds.Add(artistId);
 
         await LoadShows();
+        needsTableBind = true;
     }
 
     private async Task LoadShows()
@@ -267,18 +283,6 @@ else
                 item.MarkerIndex = markerIdx++;
             }
         }
-    }
-
-    private async Task HighlightMarker(int index)
-    {
-        if (index < 0 || mapRef is null) return;
-        await JS.InvokeVoidAsync("window.alletMap.highlight", mapRef.MapId, index);
-    }
-
-    private async Task UnhighlightMarker(int index)
-    {
-        if (index < 0 || mapRef is null) return;
-        await JS.InvokeVoidAsync("window.alletMap.unhighlight", mapRef.MapId, index);
     }
 
     private static string? GetCountry(Venue? venue)
