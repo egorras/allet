@@ -1,5 +1,3 @@
-using Allet.Web.Models;
-
 namespace Allet.Web.Models;
 
 public enum ProductionUserStatus

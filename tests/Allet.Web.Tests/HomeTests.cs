@@ -5,11 +5,10 @@ using Bunit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
 
 namespace Allet.Web.Tests;
 
-public class HomeTests : TestContext
+public class HomeTests : BunitContext
 {
     [Fact]
     public void Home_Page_Creates_New_Scope_For_Operations()
@@ -23,16 +22,16 @@ public class HomeTests : TestContext
 
         // Seed data
         dbContext.Venues.Add(new Venue { Id = 1, Name = "Main Stage" });
-        dbContext.Productions.Add(new Production 
-        { 
-            Id = 1, 
-            Title = "Test Production", 
+        dbContext.Productions.Add(new Production
+        {
+            Id = 1,
+            Title = "Test Production",
             Slug = "test-prod", // Required by EF config likely
             Source = "Test",
             Season = "2024/2025",
-            Shows = new List<Show> 
-            { 
-                new Show { Id = 1, Date = DateTime.UtcNow.AddDays(1), VenueId = 1, Title = "Test Show" } 
+            Shows = new List<Show>
+            {
+                new Show { Id = 1, Date = DateTime.UtcNow.AddDays(1), VenueId = 1, Title = "Test Show" }
             }
         });
         dbContext.SaveChanges();
@@ -46,7 +45,7 @@ public class HomeTests : TestContext
         mockScopeFactory.Setup(x => x.CreateScope()).Returns(mockScope.Object);
         mockScope.Setup(x => x.ServiceProvider).Returns(mockServiceProvider.Object);
         mockScope.Setup(x => x.Dispose()); // allow dispose
-        
+
         // When asking for DbContext, return our seeded context
         mockServiceProvider.Setup(x => x.GetService(typeof(AlletDbContext))).Returns(dbContext);
 
@@ -62,7 +61,7 @@ public class HomeTests : TestContext
         // 2. In LoadAsync (called by OnInitializedAsync)
         // We expect at least 2 calls.
         mockScopeFactory.Verify(x => x.CreateScope(), Times.AtLeast(2));
-        
+
         // Verify content rendered to ensure logic actually ran
         Assert.Contains("Test Production", cut.Markup);
         Assert.Contains("Main Stage", cut.Markup);
