@@ -15,10 +15,22 @@
 {
     <p><em>Loading...</em></p>
 }
-else if (productions.Count == 0)
-{
-    <div class="alert alert-success mt-3">You're all caught up — no new productions to review.</div>
-}
+    <div class="row g-2 align-items-center mb-3">
+        <div class="col-auto">
+            <select class="form-select" @bind="selectedVenue" @bind:after="LoadAsync">
+                <option value="">All venues</option>
+                @foreach (var v in venues)
+                {
+                    <option value="@v">@v</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (productions.Count == 0)
+    {
+        <div class="alert alert-success mt-3">You're all caught up — no new productions to review.</div>
+    }
 else
 {
     <div class="row mt-3">
@@ -132,8 +144,12 @@ else
     private Production? selectedProduction;
     private ProductionUserStatus desiredStatus;
 
+    private List<string> venues = [];
+    private string selectedVenue = "";
+
     protected override async Task OnInitializedAsync()
     {
+        venues = await Db.Venues.Select(v => v.Name).Distinct().OrderBy(n => n).ToListAsync();
         await LoadAsync();
     }
 
@@ -147,8 +163,18 @@ else
             .Include(p => p.Shows).ThenInclude(s => s.Venue)
             .AsSplitQuery()
             .Where(p => !Db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status == ProductionUserStatus.Archived))
-            .Where(p => p.Shows.Any(s => !s.Date.HasValue || s.Date > now))
-            .OrderBy(p => p.Shows.Min(s => s.Date));
+            .Where(p => p.Shows.Any(s => !s.Date.HasValue || s.Date > now));
+
+        if (!string.IsNullOrEmpty(selectedVenue))
+        {
+            query = query.Where(p => p.Shows.Any(s => s.Venue != null && s.Venue.Name == selectedVenue));
+        }
+
+        // Sort by the *next* upcoming show date. 
+        // Productions with TBD dates (null) or no future dates but valid for inclusion (e.g. TBD) should be handled.
+        // We use a conditional order: if min date exists, use it, else put at end?
+        // Simple approach: Min date of future shows.
+        query = query.OrderBy(p => p.Shows.Where(s => s.Date > now).Min(s => s.Date));
 
         productions = await query.ToListAsync();
         
