@@ -2,6 +2,7 @@ window.alletMap = {
     _maps: {},
     _tableListeners: {}, // Store listeners by tableId instead of in map entry
     _tableToMapId: {}, // Track which mapId each table is bound to
+    _pinnedMarkers: {}, // Track pinned marker per mapId
 
     // Helper to wait for element to be in DOM
     _waitForElement: function (selector, callback) {
@@ -185,6 +186,9 @@ window.alletMap = {
                 .setPopup(popup)
                 .addTo(map);
 
+            // Track if popup is pinned (clicked to stay open)
+            var isPinned = false;
+
             // Add hover events for visual effects and popup
             el.addEventListener('mouseenter', function () {
                 // Use CSS class for scaling instead of inline transform
@@ -192,9 +196,12 @@ window.alletMap = {
                 el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
                 el.style.zIndex = '10';
 
-                var p = marker.getPopup();
-                if (p && !p.isOpen()) {
-                    marker.togglePopup();
+                // Only show popup on hover if not pinned
+                if (!isPinned) {
+                    var p = marker.getPopup();
+                    if (p && !p.isOpen()) {
+                        marker.togglePopup();
+                    }
                 }
             });
 
@@ -204,9 +211,33 @@ window.alletMap = {
                 el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                 el.style.zIndex = '';
 
+                // Only hide popup on leave if not pinned
+                if (!isPinned) {
+                    var p = marker.getPopup();
+                    if (p && p.isOpen()) {
+                        marker.togglePopup();
+                    }
+                }
+            });
+
+            // Add click event to pin/unpin popup
+            el.addEventListener('click', function (e) {
+                e.stopPropagation();
                 var p = marker.getPopup();
-                if (p && p.isOpen()) {
-                    marker.togglePopup();
+                if (!p) return;
+
+                if (isPinned) {
+                    // Unpin: close popup
+                    isPinned = false;
+                    if (p.isOpen()) {
+                        marker.togglePopup();
+                    }
+                } else {
+                    // Pin: ensure popup is open
+                    isPinned = true;
+                    if (!p.isOpen()) {
+                        marker.togglePopup();
+                    }
                 }
             });
 
