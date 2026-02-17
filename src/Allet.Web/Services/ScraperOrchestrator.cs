@@ -177,7 +177,19 @@ public class ScraperOrchestrator(
             .FirstOrDefaultAsync(v => v.Name == name, cancellationToken);
 
         if (venue is not null)
+        {
+            if (geocoding is not null && !venue.Latitude.HasValue && !venue.Longitude.HasValue)
+            {
+                var result = await geocoding.GeocodeAsync(name, cancellationToken);
+                if (result is not null)
+                {
+                    venue.Latitude = result.Latitude;
+                    venue.Longitude = result.Longitude;
+                    venue.Country = result.Country;
+                }
+            }
             return venue;
+        }
 
         venue = new Venue { Name = name };
         if (geocoding is not null)
