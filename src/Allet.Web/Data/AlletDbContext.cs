@@ -9,7 +9,7 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
     public DbSet<Show> Shows => Set<Show>();
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
-    public DbSet<ArchivedProduction> ArchivedProductions => Set<ArchivedProduction>();
+    public DbSet<UserProductionActivity> UserActivities => Set<UserProductionActivity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,10 +41,10 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
                 .HasForeignKey(sub => sub.ShowId);
         });
 
-        modelBuilder.Entity<ArchivedProduction>(entity =>
+        modelBuilder.Entity<UserProductionActivity>(entity =>
         {
             entity.HasOne(a => a.Production)
-                .WithMany(p => p.Archives)
+                .WithMany(p => p.UserActivities)
                 .HasForeignKey(a => a.ProductionId)
                 .OnDelete(DeleteBehavior.Cascade);
 

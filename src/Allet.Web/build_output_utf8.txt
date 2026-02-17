@@ -1,0 +1,39 @@
+﻿  Determining projects to restore...
+  Restored C:\work\allet\src\Allet.ServiceDefaults\Allet.ServiceDefaults.csproj (in 223 ms).
+  Restored C:\work\allet\src\Allet.Web\Allet.Web.csproj (in 281 ms).
+  Allet.ServiceDefaults -> C:\work\allet\src\Allet.ServiceDefaults\bin\Debug\net10.0\Allet.ServiceDefaults.dll
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(90,13): error RZ9981: Unexpected closing tag 'div' with no matching start tag. [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(90,15): error RZ1026: Encountered end tag "div" with no matching start tag.  Are your start/end tags properly balanced? [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(65,5): error RZ9981: Unexpected closing tag 'div' with no matching start tag. [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(81,1): error RZ9981: Unexpected closing tag 'div' with no matching start tag. [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(82,61): error CS0103: The name 'isArchived' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(82,159): error CS0103: The name 'isArchived' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(268,71): error CS0103: The name 'CloseArchiveModal' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(273,60): error CS0103: The name 'archiveReason' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\obj\Debug\net10.0\Microsoft.CodeAnalysis.Razor.Compiler\Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator\Components_Pages_Productions_razor.g.cs(1521,170): error CS0103: The name 'archiveReason' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\obj\Debug\net10.0\Microsoft.CodeAnalysis.Razor.Compiler\Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator\Components_Pages_Productions_razor.g.cs(1521,145): error CS0103: The name 'archiveReason' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(284,79): error CS0103: The name 'CloseArchiveModal' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(285,77): error CS0103: The name 'ArchiveProduction' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(310,17): warning CS0169: The field 'Productions.archiveProductionId' is never used [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(309,18): warning CS0649: Field 'Productions.showArchiveModal' is never assigned to, and will always have its default value false [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+
+Build FAILED.
+
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(310,17): warning CS0169: The field 'Productions.archiveProductionId' is never used [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(309,18): warning CS0649: Field 'Productions.showArchiveModal' is never assigned to, and will always have its default value false [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(90,13): error RZ9981: Unexpected closing tag 'div' with no matching start tag. [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(90,15): error RZ1026: Encountered end tag "div" with no matching start tag.  Are your start/end tags properly balanced? [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(65,5): error RZ9981: Unexpected closing tag 'div' with no matching start tag. [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(81,1): error RZ9981: Unexpected closing tag 'div' with no matching start tag. [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(82,61): error CS0103: The name 'isArchived' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Home.razor(82,159): error CS0103: The name 'isArchived' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(268,71): error CS0103: The name 'CloseArchiveModal' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(273,60): error CS0103: The name 'archiveReason' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\obj\Debug\net10.0\Microsoft.CodeAnalysis.Razor.Compiler\Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator\Components_Pages_Productions_razor.g.cs(1521,170): error CS0103: The name 'archiveReason' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\obj\Debug\net10.0\Microsoft.CodeAnalysis.Razor.Compiler\Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator\Components_Pages_Productions_razor.g.cs(1521,145): error CS0103: The name 'archiveReason' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(284,79): error CS0103: The name 'CloseArchiveModal' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+C:\work\allet\src\Allet.Web\Components\Pages\Productions.razor(285,77): error CS0103: The name 'ArchiveProduction' does not exist in the current context [C:\work\allet\src\Allet.Web\Allet.Web.csproj]
+    2 Warning(s)
+    12 Error(s)
+
+Time Elapsed 00:00:04.24

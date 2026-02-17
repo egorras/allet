@@ -21,5 +21,5 @@ public class Production
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public List<Show> Shows { get; set; } = [];
-    public List<ArchivedProduction> Archives { get; set; } = [];
+    public List<UserProductionActivity> UserActivities { get; set; } = [];
 }

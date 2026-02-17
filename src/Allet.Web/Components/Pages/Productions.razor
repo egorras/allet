@@ -11,6 +11,17 @@
 <h1>Productions</h1>
 <p>Opera, ballet & theatre productions by season.</p>
 
+<style>
+    .production-item .status-action {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .production-item:hover .status-action {
+        opacity: 1;
+    }
+</style>
+
 <div class="row g-2 align-items-end mb-3">
     <div class="col-md-3">
         <input type="search" class="form-control" placeholder="Search..." @bind="searchText" @bind:event="oninput" @bind:after="OnFilterChanged" />
@@ -38,6 +49,7 @@
             <option value="title-asc">Title (A–Z)</option>
             <option value="title-desc">Title (Z–A)</option>
             <option value="newest">Newest first</option>
+            <option value="date-asc">Date (Earliest first)</option>
             <option value="season">Season</option>
         </select>
     </div>
@@ -49,8 +61,20 @@
     </div>
     <div class="col-auto">
         <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="showWatchedToggle" @bind="showWatched" @bind:after="OnFilterChanged" />
+            <label class="form-check-label" for="showWatchedToggle">Watched</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="showPlannedToggle" @bind="showPlanned" @bind:after="OnFilterChanged" />
+            <label class="form-check-label" for="showPlannedToggle">Planned</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="showArchivedToggle" @bind="showArchived" @bind:after="OnFilterChanged" />
-            <label class="form-check-label" for="showArchivedToggle">Show archived</label>
+            <label class="form-check-label" for="showArchivedToggle">Archived</label>
         </div>
     </div>
     <div class="col-auto">
@@ -71,10 +95,13 @@ else if (viewMode == "gallery")
     <div class="row mt-3">
         @foreach (var production in productions)
         {
-            var isArchived = archivedIds.Contains(production.Id);
+            var userStatus = userActivities.TryGetValue(production.Id, out var activity) ? activity.Status : ProductionUserStatus.None;
+            var isArchived = userStatus == ProductionUserStatus.Archived;
+            var isWatched = userStatus == ProductionUserStatus.Watched;
+            var isPlanned = userStatus == ProductionUserStatus.Planned;
             var dates = production.Shows.Where(s => s.Date.HasValue).Select(s => s.Date!.Value).OrderBy(d => d).ToList();
             var venues = production.Shows.Where(s => s.Venue != null).Select(s => s.Venue!.Name).Distinct().ToList();
-            <div class="col-md-4 col-lg-3 mb-4">
+            <div class="col-md-4 col-lg-3 mb-4 production-item">
                 <div class="card h-100 @(isArchived ? "border-warning" : "")">
                     @if (!string.IsNullOrEmpty(production.ImageUrl))
                     {
@@ -85,7 +112,15 @@ else if (viewMode == "gallery")
                             <a href="productions/@production.Id" class="text-decoration-none">@production.Title</a>
                             @if (isArchived)
                             {
-                                <span class="badge bg-warning text-dark ms-1">Archived</span>
+                                <span class="badge bg-secondary text-white ms-1">Archived</span>
+                            }
+                            @if (isWatched)
+                            {
+                                <span class="badge bg-success text-white ms-1">Watched</span>
+                            }
+                            @if (isPlanned)
+                            {
+                                <span class="badge bg-info text-dark ms-1">Planned</span>
                             }
                         </h5>
                         <p class="card-text text-muted mb-1">@production.Season</p>
@@ -123,15 +158,16 @@ else if (viewMode == "gallery")
                         }
                         <div class="mt-auto">
                             <span class="badge bg-secondary mb-2">@production.Shows.Count show(s)</span>
-                            <div class="d-flex justify-content-end">
-                                @if (isArchived)
-                                {
-                                    <button class="btn btn-sm btn-outline-success" @onclick="() => Unarchive(production.Id)">Unarchive</button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => OpenArchiveModal(production.Id)">Archive</button>
-                                }
+                            <div class="d-flex justify-content-end gap-1 status-action">
+                                <button class="btn btn-sm @(isWatched ? "btn-success" : "btn-outline-success")" @onclick="() => SetStatus(production.Id, ProductionUserStatus.Watched)" title="Mark as Watched">
+                                    <i class="bi bi-check-lg"></i> Watched
+                                </button>
+                                <button class="btn btn-sm @(isPlanned ? "btn-info" : "btn-outline-info")" @onclick="() => SetStatus(production.Id, ProductionUserStatus.Planned)" title="Mark as Planned">
+                                    <i class="bi bi-calendar-event"></i> Planned
+                                </button>
+                                <button class="btn btn-sm @(isArchived ? "btn-secondary" : "btn-outline-secondary")" @onclick="() => SetStatus(production.Id, isArchived ? ProductionUserStatus.None : ProductionUserStatus.Archived)" title="Archive">
+                                    <i class="bi bi-archive"></i> Archive
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -163,10 +199,11 @@ else
             <tbody>
                 @foreach (var p in productions)
                 {
-                    var isArchived = archivedIds.Contains(p.Id);
+                    var userStatus = userActivities.TryGetValue(p.Id, out var activity) ? activity.Status : ProductionUserStatus.None;
+                    var isArchived = userStatus == ProductionUserStatus.Archived;
                     var dates = p.Shows.Where(s => s.Date.HasValue).Select(s => s.Date!.Value).OrderBy(d => d).ToList();
                     var venues = p.Shows.Where(s => s.Venue != null).Select(s => s.Venue!.Name).Distinct().ToList();
-                    <tr>
+                    <tr class="production-item">
                         <td><a href="productions/@p.Id">@p.Title</a></td>
                         <td>@p.Season</td>
                         <td>@p.Category</td>
@@ -186,28 +223,35 @@ else
                         </td>
                         <td>@p.Shows.Count</td>
                         <td>@(p.RunningTimeMinutes.HasValue ? $"{p.RunningTimeMinutes} min" : "—")</td>
-                        @if (showArchived)
+                        @if (showArchived || showWatched || showPlanned)
                         {
                             <td>
-                                @if (isArchived)
+                                @if (userStatus == ProductionUserStatus.Archived)
                                 {
-                                    <span class="badge bg-warning text-dark">Archived</span>
+                                    <span class="badge bg-secondary">Archived</span>
                                 }
-                                else
+                                else if (userStatus == ProductionUserStatus.Watched)
                                 {
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge bg-success">Watched</span>
+                                }
+                                else if (userStatus == ProductionUserStatus.Planned)
+                                {
+                                    <span class="badge bg-info text-dark">Planned</span>
                                 }
                             </td>
                         }
                         <td>
-                            @if (isArchived)
-                            {
-                                <button class="btn btn-sm btn-outline-success" @onclick="() => Unarchive(p.Id)">Unarchive</button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-outline-warning" @onclick="() => OpenArchiveModal(p.Id)">Archive</button>
-                            }
+                             <div class="d-flex justify-content-end gap-1 status-action">
+                                <button class="btn btn-sm @(userStatus == ProductionUserStatus.Watched ? "btn-success" : "btn-outline-success")" @onclick="() => SetStatus(p.Id, ProductionUserStatus.Watched)" title="Mark as Watched">
+                                    W
+                                </button>
+                                <button class="btn btn-sm @(userStatus == ProductionUserStatus.Planned ? "btn-info" : "btn-outline-info")" @onclick="() => SetStatus(p.Id, ProductionUserStatus.Planned)" title="Mark as Planned">
+                                    P
+                                </button>
+                                <button class="btn btn-sm @(userStatus == ProductionUserStatus.Archived ? "btn-secondary" : "btn-outline-secondary")" @onclick="() => SetStatus(p.Id, userStatus == ProductionUserStatus.Archived ? ProductionUserStatus.None : ProductionUserStatus.Archived)" title="Archive">
+                                    A
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 }
@@ -216,41 +260,12 @@ else
     </div>
 }
 
-@if (showArchiveModal)
-{
-    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Archive Production</h5>
-                    <button type="button" class="btn-close" @onclick="CloseArchiveModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Reason</label>
-                        <select class="form-select" @bind="archiveReason">
-                            <option value="@ArchiveReason.NotInterested">Not interested</option>
-                            <option value="@ArchiveReason.Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Note (optional)</label>
-                        <textarea class="form-control" rows="2" @bind="archiveNote"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseArchiveModal">Cancel</button>
-                    <button type="button" class="btn btn-warning" @onclick="ArchiveProduction">Archive</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+
 
 @code {
     private const string currentUserId = "default";
     private List<Production>? productions;
-    private HashSet<int> archivedIds = [];
+    private Dictionary<int, UserProductionActivity> userActivities = [];
     private List<string> seasons = [];
     private List<string> categories = [];
 
@@ -260,11 +275,10 @@ else
     private string sortBy = "title-asc";
     private string viewMode = "gallery";
     private bool showArchived;
+    private bool showWatched;
+    private bool showPlanned;
 
-    private bool showArchiveModal;
-    private int archiveProductionId;
-    private ArchiveReason archiveReason = ArchiveReason.NotInterested;
-    private string? archiveNote;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -278,10 +292,55 @@ else
     {
         var query = Db.Productions.AsNoTracking()
             .Include(p => p.Shows).ThenInclude(s => s.Venue)
+            .AsSplitQuery()
             .AsQueryable();
 
+        // Load user activities first to filter in memory if necessary, or check logic
+        // For efficiency, we might want to filter in database if possible, but status is complex.
+        // Let's load activities for current user and use that to filter IDs.
+        
+        var myActivities = await Db.UserActivities
+            .Where(a => a.UserId == currentUserId)
+            .ToListAsync();
+            
+        userActivities = myActivities.ToDictionary(a => a.ProductionId);
+
         if (!showArchived)
-            query = query.Where(p => !Db.ArchivedProductions.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId));
+            query = query.Where(p => !Db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status == ProductionUserStatus.Archived));
+        
+        // Note: Watched/Planned filtering logic could be additive or restrictive.
+        // Assuming "showWatched" means *include* watched items (which are usually included unless archived).
+        // If the user wants to filter *only* watched items, the UI would be different.
+        // Current logic: Standard view hides Archived. Toggles can show specific types.
+        
+        // Let's adjust: "Show Archived" toggles visibility of archived items.
+        // "Show Watched" / "Show Planned" -> if checked, we MIGHT filter to ONLY those?
+        // Or are they just filters on top?
+        // Based on typical UI:
+        // - Default: Show active (None, Watched, Planned) - wait, Watched might be considered "done".
+        // Let's assume standard feed shows everything except Archived.
+        // If "Watched" toggle is ON, maybe we filter to ONLY watched? Or just ensure they are visible?
+        // Let's stick to: "Show Archived" allows archived items to appear.
+        // "Watched" / "Planned" filters: if any active, filter to those types.
+        
+        if (showWatched || showPlanned)
+        {
+             var allowedStatuses = new List<ProductionUserStatus>();
+             if (showWatched) allowedStatuses.Add(ProductionUserStatus.Watched);
+             if (showPlanned) allowedStatuses.Add(ProductionUserStatus.Planned);
+             // If archived is also checked, include it?
+             if (showArchived) allowedStatuses.Add(ProductionUserStatus.Archived);
+             
+             // If we filter by status, we need to match status.
+             // This requires joining or subquery.
+             query = query.Where(p => Db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && allowedStatuses.Contains(a.Status)));
+        }
+        else if (!showArchived)
+        {
+             // Default behavior: verify logic.
+             // If not showing archived, exclude Archive status.
+             query = query.Where(p => !Db.UserActivities.Any(a => a.ProductionId == p.Id && a.UserId == currentUserId && a.Status == ProductionUserStatus.Archived));
+        }
 
         if (!string.IsNullOrWhiteSpace(searchText))
             query = query.Where(p => p.Title.ToLower().Contains(searchText.ToLower()));
@@ -294,24 +353,14 @@ else
         {
             "title-desc" => query.OrderByDescending(p => p.Title),
             "newest" => query.OrderByDescending(p => p.CreatedAt),
+            "date-asc" => query.OrderBy(p => p.Shows.Min(s => s.Date)),
             "season" => query.OrderByDescending(p => p.Season).ThenBy(p => p.Title),
             _ => query.OrderBy(p => p.Title),
         };
 
         productions = await query.ToListAsync();
 
-        if (showArchived)
-        {
-            archivedIds = (await Db.ArchivedProductions
-                .Where(a => a.UserId == currentUserId)
-                .Select(a => a.ProductionId)
-                .ToListAsync())
-                .ToHashSet();
-        }
-        else
-        {
-            archivedIds = [];
-        }
+
     }
 
     private async Task OnFilterChanged() => await LoadProductionsAsync();
@@ -323,45 +372,45 @@ else
         selectedCategory = "";
         sortBy = "title-asc";
         showArchived = false;
+        showWatched = false;
+        showPlanned = false;
         await LoadProductionsAsync();
     }
 
-    private void OpenArchiveModal(int productionId)
+    private async Task SetStatus(int productionId, ProductionUserStatus status)
     {
-        archiveProductionId = productionId;
-        archiveReason = ArchiveReason.NotInterested;
-        archiveNote = null;
-        showArchiveModal = true;
-    }
-
-    private void CloseArchiveModal()
-    {
-        showArchiveModal = false;
-    }
-
-    private async Task ArchiveProduction()
-    {
-        Db.ArchivedProductions.Add(new ArchivedProduction
-        {
-            ProductionId = archiveProductionId,
-            UserId = currentUserId,
-            Reason = archiveReason,
-            Note = archiveNote,
-        });
-        await Db.SaveChangesAsync();
-        showArchiveModal = false;
-        await LoadProductionsAsync();
-    }
-
-    private async Task Unarchive(int productionId)
-    {
-        var record = await Db.ArchivedProductions
+        var activity = await Db.UserActivities
             .FirstOrDefaultAsync(a => a.ProductionId == productionId && a.UserId == currentUserId);
-        if (record is not null)
+
+        if (status == ProductionUserStatus.None)
         {
-            Db.ArchivedProductions.Remove(record);
-            await Db.SaveChangesAsync();
+            if (activity is not null)
+            {
+                Db.UserActivities.Remove(activity);
+            }
         }
+        else
+        {
+            if (activity is null)
+            {
+                activity = new UserProductionActivity
+                {
+                    ProductionId = productionId,
+                    UserId = currentUserId,
+                    Status = status
+                };
+                Db.UserActivities.Add(activity);
+            }
+            else
+            {
+                activity.Status = status;
+                activity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        
+        await Db.SaveChangesAsync();
         await LoadProductionsAsync();
     }
+    
+    // Legacy methods removed or replaced by SetStatus
 }
