@@ -188,6 +188,7 @@ else
         if (needsTableBind && mapRef is not null)
         {
             needsTableBind = false;
+            
             try
             {
                 await JS.InvokeVoidAsync("window.alletMap.bindTableHover", mapRef.MapId, tableId);

@@ -1,6 +1,29 @@
 window.alletMap = {
     _maps: {},
 
+    // Helper to wait for element to be in DOM
+    _waitForElement: function (selector, callback) {
+        var element = document.getElementById(selector);
+        if (element) {
+            callback(element);
+            return;
+        }
+
+        // Use MutationObserver to wait for element
+        var observer = new MutationObserver(function (mutations, obs) {
+            var el = document.getElementById(selector);
+            if (el) {
+                obs.disconnect();
+                callback(el);
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    },
+
     init: function (mapId, accessToken, markers) {
         if (typeof mapboxgl === 'undefined') return;
 
@@ -195,49 +218,72 @@ window.alletMap = {
     },
 
     bindTableHover: function (mapId, tableId) {
-        var table = document.getElementById(tableId);
-        if (!table) return;
-        var currentRow = null;
-        var entry = this._maps[mapId];
+        var self = this;
 
-        table.addEventListener('mouseover', function (e) {
-            var row = e.target.closest('tr[data-marker]');
-            if (row === currentRow) return;
-            if (currentRow) {
-                var oldIdx = parseInt(currentRow.dataset.marker, 10);
-                if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
-            }
-            currentRow = row;
-            if (row) {
-                var idx = parseInt(row.dataset.marker, 10);
-                if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
-            }
-        });
+        // Wait for table to be in DOM
+        this._waitForElement(tableId, function (table) {
+            var entry = self._maps[mapId];
+            if (!entry) return;
 
-        table.addEventListener('mouseleave', function () {
-            if (currentRow) {
-                var idx = parseInt(currentRow.dataset.marker, 10);
-                if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
-                currentRow = null;
+            // Remove old listeners if they exist
+            if (entry.tableListeners) {
+                table.removeEventListener('mouseover', entry.tableListeners.mouseover);
+                table.removeEventListener('mouseleave', entry.tableListeners.mouseleave);
+                table.removeEventListener('click', entry.tableListeners.click);
             }
-        });
 
-        // Add click handler to pan to marker
-        table.addEventListener('click', function (e) {
-            var row = e.target.closest('tr[data-marker]');
-            if (row && entry) {
-                var idx = parseInt(row.dataset.marker, 10);
-                if (!isNaN(idx) && idx >= 0) {
-                    var marker = entry.markers[idx];
-                    if (marker) {
-                        entry.map.flyTo({
-                            center: [marker.lng, marker.lat],
-                            zoom: 12,
-                            duration: 1000
-                        });
+            var currentRow = null;
+
+            var mouseoverHandler = function (e) {
+                var row = e.target.closest('tr[data-marker]');
+                if (row === currentRow) return;
+                if (currentRow) {
+                    var oldIdx = parseInt(currentRow.dataset.marker, 10);
+                    if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
+                }
+                currentRow = row;
+                if (row) {
+                    var idx = parseInt(row.dataset.marker, 10);
+                    if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
+                }
+            };
+
+            var mouseleaveHandler = function () {
+                if (currentRow) {
+                    var idx = parseInt(currentRow.dataset.marker, 10);
+                    if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
+                    currentRow = null;
+                }
+            };
+
+            var clickHandler = function (e) {
+                var row = e.target.closest('tr[data-marker]');
+                if (row && entry) {
+                    var idx = parseInt(row.dataset.marker, 10);
+                    if (!isNaN(idx) && idx >= 0) {
+                        var marker = entry.markers[idx];
+                        if (marker) {
+                            entry.map.flyTo({
+                                center: [marker.lng, marker.lat],
+                                zoom: 12,
+                                duration: 1000
+                            });
+                        }
                     }
                 }
-            }
+            };
+
+            // Store listeners so we can remove them later
+            entry.tableListeners = {
+                mouseover: mouseoverHandler,
+                mouseleave: mouseleaveHandler,
+                click: clickHandler
+            };
+
+            // Add new listeners
+            table.addEventListener('mouseover', mouseoverHandler);
+            table.addEventListener('mouseleave', mouseleaveHandler);
+            table.addEventListener('click', clickHandler);
         });
     }
 };
