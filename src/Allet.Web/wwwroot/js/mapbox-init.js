@@ -226,15 +226,28 @@ window.alletMap = {
                 var p = marker.getPopup();
                 if (!p) return;
 
+                // Unpin any previously pinned marker in this map
+                var previousPinned = window.alletMap._pinnedMarkers[mapId];
+                if (previousPinned && previousPinned !== marker) {
+                    var prevPopup = previousPinned.getPopup();
+                    if (prevPopup && prevPopup.isOpen()) {
+                        previousPinned.togglePopup();
+                    }
+                    // Reset the isPinned flag for the previous marker
+                    // (we can't access it directly, but it will be handled by the new pin)
+                }
+
                 if (isPinned) {
                     // Unpin: close popup
                     isPinned = false;
+                    window.alletMap._pinnedMarkers[mapId] = null;
                     if (p.isOpen()) {
                         marker.togglePopup();
                     }
                 } else {
                     // Pin: ensure popup is open
                     isPinned = true;
+                    window.alletMap._pinnedMarkers[mapId] = marker;
                     if (!p.isOpen()) {
                         marker.togglePopup();
                     }
