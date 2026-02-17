@@ -200,32 +200,11 @@ public class ScraperOrchestrator(
                 venue.Latitude = result.Latitude;
                 venue.Longitude = result.Longitude;
                 venue.Country = result.Country;
-                venue.Name = StripTrailingCountry(venue.Name, result.Country);
+                venue.Name = CountryFlagHelper.CleanVenueName(venue.Name, result.Country);
             }
         }
         db.Venues.Add(venue);
         await db.SaveChangesAsync(cancellationToken);
         return venue;
-    }
-
-    private static string StripTrailingCountry(string name, string? country)
-    {
-        if (string.IsNullOrWhiteSpace(country)) return name;
-
-        // Try the geocoded country name (e.g. "France") and its ISO code (e.g. "FR")
-        var suffixes = new List<string> { country };
-        var code = CountryFlagHelper.ToIsoCode(country);
-        if (code is not null)
-            suffixes.Add(code);
-
-        foreach (var suffix in suffixes)
-        {
-            if (name.EndsWith(", " + suffix, StringComparison.OrdinalIgnoreCase))
-            {
-                return name[..^(", ".Length + suffix.Length)].TrimEnd();
-            }
-        }
-
-        return name;
     }
 }

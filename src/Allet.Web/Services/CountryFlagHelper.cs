@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components;
+
 namespace Allet.Web.Services;
 
 public static class CountryFlagHelper
@@ -51,29 +53,52 @@ public static class CountryFlagHelper
     public static string? ToIsoCode(string? country)
     {
         if (string.IsNullOrWhiteSpace(country)) return null;
-        return CountryToCode.TryGetValue(country.Trim(), out var code) ? code : null;
+        var trimmed = country.Trim();
+        // Already a 2-letter code?
+        if (trimmed.Length == 2) return trimmed.ToUpperInvariant();
+        return CountryToCode.TryGetValue(trimmed, out var code) ? code : null;
     }
 
     /// <summary>
-    /// Converts a country name to a flag emoji (e.g. "France" → "🇫🇷").
-    /// Returns null if the country is not recognized.
+    /// Returns the CSS class for a flag-icons flag (e.g. "France" → "fi fi-fr"),
+    /// or null if the country is not recognized.
     /// </summary>
-    public static string? ToFlagEmoji(string? country)
+    public static string? ToFlagCss(string? country)
     {
-        if (string.IsNullOrWhiteSpace(country)) return null;
+        var code = ToIsoCode(country);
+        return code is not null ? $"fi fi-{code.ToLowerInvariant()}" : null;
+    }
 
-        // If it's already a 2-letter code, use it directly
-        var code = country.Trim();
-        if (code.Length != 2 && !CountryToCode.TryGetValue(code, out code))
-            return null;
+    /// <summary>
+    /// Returns a MarkupString rendering a flag icon, or empty if country is not recognized.
+    /// </summary>
+    public static MarkupString FlagIcon(string? country)
+    {
+        var css = ToFlagCss(country);
+        if (css is null) return new MarkupString("");
+        return new MarkupString($"<span class=\"{css}\" title=\"{country}\"></span>");
+    }
 
-        if (code is not { Length: 2 }) return null;
-        code = code.ToUpperInvariant();
+    /// <summary>
+    /// Strips trailing country name or code from a venue display name
+    /// when the venue has been geolocated.
+    /// </summary>
+    public static string CleanVenueName(string name, string? country)
+    {
+        if (string.IsNullOrWhiteSpace(country)) return name;
 
-        // Convert each letter to regional indicator symbol (🇦 = U+1F1E6, A = U+0041)
-        return string.Concat(
-            char.ConvertFromUtf32(0x1F1E6 + (code[0] - 'A')),
-            char.ConvertFromUtf32(0x1F1E6 + (code[1] - 'A'))
-        );
+        var code = ToIsoCode(country);
+        // Try full country name and ISO code
+        string[] suffixes = code is not null ? [country, code] : [country];
+
+        foreach (var suffix in suffixes)
+        {
+            if (name.EndsWith(", " + suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                return name[..^(", ".Length + suffix.Length)].TrimEnd();
+            }
+        }
+
+        return name;
     }
 }

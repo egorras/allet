@@ -93,7 +93,7 @@ else
                                 <th>Date</th>
                                 <th>Artist</th>
                                 <th>Venue</th>
-                                <th title="Country"></th>
+                                <th></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -102,7 +102,7 @@ else
                             {
                                 var idx = item.MarkerIndex;
                                 var color = GetArtistColor(item.ArtistId);
-                                var flag = Allet.Web.Services.CountryFlagHelper.ToFlagEmoji(GetCountry(item.Venue));
+                                var country = GetCountry(item.Venue);
                                 <tr style="cursor: pointer; border-left: 3px solid @color;" data-marker="@idx">
                                     <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
                                     <td>
@@ -110,13 +110,13 @@ else
                                         @item.ArtistName
                                     </td>
                                     <td>
-                                        @(item.Venue?.Name ?? "—")
+                                        @(DisplayVenueName(item.Venue))
                                         @if (!string.IsNullOrEmpty(item.Venue?.City))
                                         {
                                             <small class="text-muted d-block">@item.Venue.City</small>
                                         }
                                     </td>
-                                    <td title="@(GetCountry(item.Venue) ?? "")">@(flag ?? "")</td>
+                                    <td>@(Allet.Web.Services.CountryFlagHelper.FlagIcon(country))</td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.Show.Url))
                                         {
@@ -286,6 +286,12 @@ else
                 item.MarkerIndex = markerIdx++;
             }
         }
+    }
+
+    private static string DisplayVenueName(Venue? venue)
+    {
+        if (venue is null) return "—";
+        return Allet.Web.Services.CountryFlagHelper.CleanVenueName(venue.Name, venue.Country);
     }
 
     private static string? GetCountry(Venue? venue)

@@ -83,7 +83,7 @@ else
                             <tr>
                                 <th>Date</th>
                                 <th>Venue</th>
-                                <th title="Country"></th>
+                                <th></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -91,17 +91,17 @@ else
                             @foreach (var item in filteredShows)
                             {
                                 var idx = item.MarkerIndex;
-                                var flag = Allet.Web.Services.CountryFlagHelper.ToFlagEmoji(GetCountry(item.Venue));
+                                var country = GetCountry(item.Venue);
                                 <tr style="cursor: pointer;" data-marker="@idx">
                                     <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
                                     <td>
-                                        @(item.Venue?.Name ?? "—")
+                                        @(DisplayVenueName(item.Venue))
                                         @if (!string.IsNullOrEmpty(item.Venue?.City))
                                         {
                                             <small class="text-muted d-block">@item.Venue.City</small>
                                         }
                                     </td>
-                                    <td title="@(GetCountry(item.Venue) ?? "")">@(flag ?? "")</td>
+                                    <td>@(Allet.Web.Services.CountryFlagHelper.FlagIcon(country))</td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.Show.Url))
                                         {
@@ -230,6 +230,12 @@ else
                 item.MarkerIndex = markerIdx++;
             }
         }
+    }
+
+    private static string DisplayVenueName(Venue? venue)
+    {
+        if (venue is null) return "—";
+        return Allet.Web.Services.CountryFlagHelper.CleanVenueName(venue.Name, venue.Country);
     }
 
     private static string? GetCountry(Venue? venue)
