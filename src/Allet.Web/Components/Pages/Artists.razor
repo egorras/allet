@@ -1,0 +1,56 @@
+@page "/artists"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@inject AlletDbContext Db
+@rendermode InteractiveServer
+
+<PageTitle>Artists - Allet</PageTitle>
+
+<h1>Artists</h1>
+<p>Tracked artists and their tours.</p>
+
+@if (artists is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (artists.Count == 0)
+{
+    <div class="alert alert-info">No artists yet. Run the Coeur de Pirate scraper (or other artist scrapers) to populate data.</div>
+}
+else
+{
+    <div class="row g-3 mt-2">
+        @foreach (var artist in artists)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    @if (!string.IsNullOrEmpty(artist.ImageUrl))
+                    {
+                        <img src="@artist.ImageUrl" class="card-img-top" alt="@artist.Name" style="object-fit: cover; height: 12rem;" />
+                    }
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="artists/@artist.Id" class="text-decoration-none">@artist.Name</a>
+                        </h5>
+                        <p class="card-text text-muted small mb-0">
+                            @artist.Productions.Count production(s)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Artist>? artists;
+
+    protected override async Task OnInitializedAsync()
+    {
+        artists = await Db.Artists
+            .Include(a => a.Productions)
+            .OrderBy(a => a.Name)
+            .ToListAsync();
+    }
+}

@@ -64,7 +64,7 @@ public class ScraperOrchestrator(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static async Task<Production> UpsertProductionAsync(
+    private async Task<Production> UpsertProductionAsync(
         AlletDbContext db, string source, ScrapedProduction scraped, CancellationToken cancellationToken)
     {
         var existing = await db.Productions
@@ -72,6 +72,12 @@ public class ScraperOrchestrator(
                 p.Source == source &&
                 p.Slug == scraped.Slug,
                 cancellationToken);
+
+        Artist? artist = null;
+        if (!string.IsNullOrWhiteSpace(scraped.ArtistSlug))
+        {
+            artist = await GetOrCreateArtistAsync(db, scraped.ArtistName ?? scraped.ArtistSlug, scraped.ArtistSlug, cancellationToken);
+        }
 
         if (existing is not null)
         {
@@ -86,6 +92,8 @@ public class ScraperOrchestrator(
             existing.SourceUrl = scraped.SourceUrl ?? existing.SourceUrl;
             existing.Tags = scraped.Tags ?? existing.Tags;
             existing.RunningTimeMinutes = scraped.RunningTimeMinutes ?? existing.RunningTimeMinutes;
+            if (artist is not null)
+                existing.ArtistId = artist.Id;
             existing.UpdatedAt = DateTime.UtcNow;
             return existing;
         }
@@ -104,11 +112,28 @@ public class ScraperOrchestrator(
                 ? string.Join("|", scraped.GalleryUrls) : null,
             SourceUrl = scraped.SourceUrl,
             Tags = scraped.Tags,
-            RunningTimeMinutes = scraped.RunningTimeMinutes
+            RunningTimeMinutes = scraped.RunningTimeMinutes,
+            ArtistId = artist?.Id
         };
         db.Productions.Add(production);
         await db.SaveChangesAsync(cancellationToken);
         return production;
+    }
+
+    private static async Task<Artist> GetOrCreateArtistAsync(
+        AlletDbContext db, string name, string slug, CancellationToken cancellationToken)
+    {
+        var artist = await db.Artists.FirstOrDefaultAsync(a => a.Slug == slug, cancellationToken);
+        if (artist is not null)
+        {
+            artist.Name = name;
+            artist.UpdatedAt = DateTime.UtcNow;
+            return artist;
+        }
+        artist = new Artist { Name = name, Slug = slug };
+        db.Artists.Add(artist);
+        await db.SaveChangesAsync(cancellationToken);
+        return artist;
     }
 
     private static async Task UpsertShowAsync(

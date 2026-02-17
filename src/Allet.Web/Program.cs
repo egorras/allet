@@ -45,9 +45,17 @@ builder.Services.AddHttpClient<WienerStaatsoperScraper>(client =>
 });
 builder.Services.AddScoped<IScraperService, WienerStaatsoperScraper>();
 
+builder.Services.AddHttpClient<CoeurDePirateScraper>(client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Allet/1.0");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<IScraperService, CoeurDePirateScraper>();
+
 builder.Services.AddScoped<ScraperOrchestrator>();
 builder.Services.AddScoped<OperaHuScraperJob>();
 builder.Services.AddScoped<WienerStaatsoperScraperJob>();
+builder.Services.AddScoped<CoeurDePirateScraperJob>();
 
 var app = builder.Build();
 
@@ -86,6 +94,11 @@ RecurringJob.AddOrUpdate<OperaHuScraperJob>(
 
 RecurringJob.AddOrUpdate<WienerStaatsoperScraperJob>(
     "scrape-wiener-staatsoper",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 7 * * *"); // Daily at 7 AM
+
+RecurringJob.AddOrUpdate<CoeurDePirateScraperJob>(
+    "scrape-coeur-de-pirate",
     job => job.ExecuteAsync(CancellationToken.None),
     "0 7 * * *"); // Daily at 7 AM
 

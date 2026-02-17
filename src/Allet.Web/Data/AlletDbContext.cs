@@ -10,6 +10,7 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<UserProductionActivity> UserActivities => Set<UserProductionActivity>();
+    public DbSet<Artist> Artists => Set<Artist>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,7 +20,11 @@ public class AlletDbContext(DbContextOptions<AlletDbContext> options) : DbContex
                 .WithOne(s => s.Production)
                 .HasForeignKey(s => s.ProductionId);
 
-            entity.HasIndex(p => new { p.Source, p.Slug, p.Season })
+            entity.HasOne(p => p.Artist)
+                .WithMany(a => a.Productions)
+                .HasForeignKey(p => p.ArtistId);
+
+            entity.HasIndex(p => new { p.Source, p.Slug })
                 .IsUnique();
         });
 

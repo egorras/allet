@@ -1,0 +1,44 @@
+@using Allet.Web.Models
+@inject IJSRuntime JS
+
+<div class="map-container rounded border" style="height: 400px; min-height: 300px;">
+    @if (string.IsNullOrWhiteSpace(AccessToken))
+    {
+        <div class="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
+            <div class="text-center p-3">
+                <p class="mb-0">Set <strong>Mapbox:AccessToken</strong> in appsettings to load the map.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div id="@mapId" class="h-100 w-100"></div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<MapMarker>? Markers { get; set; }
+    [Parameter] public string? AccessToken { get; set; }
+
+    private readonly string mapId = "map-" + Guid.NewGuid().ToString("N")[..8];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || string.IsNullOrWhiteSpace(AccessToken) || Markers is null)
+            return;
+
+        var markers = Markers
+            .Where(m => m.Lat != 0 || m.Lng != 0)
+            .Select(m => new { m.Label, m.Lat, m.Lng })
+            .ToList();
+
+        try
+        {
+            await JS.InvokeVoidAsync("window.alletMap.init", mapId, AccessToken, markers);
+        }
+        catch
+        {
+            // Mapbox script may not be loaded yet or token invalid
+        }
+    }
+}

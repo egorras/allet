@@ -1,0 +1,147 @@
+@page "/artists/{Id:int}"
+@using Allet.Web.Data
+@using Allet.Web.Models
+@using Microsoft.EntityFrameworkCore
+@using Allet.Web.Components.Shared
+@inject AlletDbContext Db
+@inject IConfiguration Config
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>@(artist?.Name ?? "Artist") - Allet</PageTitle>
+
+@if (artist is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="artists">Artists</a></li>
+            <li class="breadcrumb-item active">@artist.Name</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        @if (!string.IsNullOrEmpty(artist.ImageUrl))
+        {
+            <div class="col-md-4 mb-3">
+                <img src="@artist.ImageUrl" class="img-fluid rounded" alt="@artist.Name" />
+            </div>
+        }
+        <div class="@(string.IsNullOrEmpty(artist.ImageUrl) ? "col-12" : "col-md-8")">
+            <h1>@artist.Name</h1>
+            @if (!string.IsNullOrEmpty(artist.Bio))
+            {
+                <p class="lead">@artist.Bio</p>
+            }
+            @if (!string.IsNullOrEmpty(artist.WebsiteUrl))
+            {
+                <p>
+                    <a href="@artist.WebsiteUrl" target="_blank" rel="noopener">Website</a>
+                </p>
+            }
+        </div>
+    </div>
+
+    <h2 class="mt-4">Tours & productions <span class="badge bg-secondary">@artist.Productions.Count</span></h2>
+
+    @if (artist.Productions.Count == 0)
+    {
+        <div class="alert alert-info">No productions or tour dates for this artist yet.</div>
+    }
+    else
+    {
+        @foreach (var production in artist.Productions.OrderByDescending(p => p.UpdatedAt))
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="productions/@production.Id" class="text-decoration-none">@production.Title</a>
+                    </h5>
+                    <p class="card-text text-muted small mb-2">@production.Source · @production.Shows.Count show(s)</p>
+                    @if (production.Shows.Count > 0)
+                    {
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var show in production.Shows.OrderBy(s => s.Date).Take(10))
+                            {
+                                <li class="small">
+                                    @show.Date?.ToString("yyyy-MM-dd") — @(show.Venue?.Name ?? "?")
+                                    @if (!string.IsNullOrEmpty(show.Url))
+                                    {
+                                        <a href="@show.Url" target="_blank" rel="noopener" class="ms-1">Tickets</a>
+                                    }
+                                </li>
+                            }
+                            @if (production.Shows.Count > 10)
+                            {
+                                <li class="small text-muted">… and @(production.Shows.Count - 10) more</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        }
+
+        <h2 class="mt-4">Tour map</h2>
+        <Map Markers="@mapMarkers" AccessToken="@mapboxToken" />
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Artist? artist;
+    private List<MapMarker> mapMarkers = [];
+    private string? mapboxToken;
+
+    protected override async Task OnInitializedAsync()
+    {
+        artist = await Db.Artists
+            .Include(a => a.Productions)
+                .ThenInclude(p => p.Shows)
+                .ThenInclude(s => s.Venue)
+            .FirstOrDefaultAsync(a => a.Id == Id);
+
+        if (artist is null)
+        {
+            Nav.NavigateTo("artists");
+            return;
+        }
+
+        mapboxToken = Config["Mapbox:AccessToken"];
+
+        foreach (var production in artist.Productions)
+        {
+            foreach (var show in production.Shows.Where(s => s.Venue != null))
+            {
+                var v = show.Venue!;
+                var (lat, lng) = TryGetCoordinates(v);
+                if (lat.HasValue && lng.HasValue)
+                {
+                    mapMarkers.Add(new MapMarker
+                    {
+                        Label = v.Name,
+                        Lat = lat.Value,
+                        Lng = lng.Value
+                    });
+                }
+            }
+        }
+    }
+
+    private static (double?, double?) TryGetCoordinates(Venue venue)
+    {
+        var name = (venue.Name + " " + (venue.City ?? "")).ToLowerInvariant();
+        if (name.Contains("paris")) return (48.8566, 2.3522);
+        if (name.Contains("montreal") || name.Contains("montréal")) return (45.5017, -73.5673);
+        if (name.Contains("ostwald") || name.Contains("strasbourg")) return (48.5734, 7.7521);
+        if (name.Contains("brussels") || name.Contains("bruxelles")) return (50.8503, 4.3517);
+        if (name.Contains("lyon")) return (45.7640, 4.8357);
+        if (name.Contains("quebec")) return (46.8139, -71.2082);
+        if (name.Contains("new york")) return (40.7128, -74.0060);
+        if (name.Contains("london")) return (51.5074, -0.1278);
+        return (null, null);
+    }
+}

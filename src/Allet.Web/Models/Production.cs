@@ -21,4 +21,7 @@ public class Production
 
     public List<Show> Shows { get; set; } = [];
     public List<UserProductionActivity> UserActivities { get; set; } = [];
+
+    public int? ArtistId { get; set; }
+    public Artist? Artist { get; set; }
 }

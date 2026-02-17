@@ -29,6 +29,8 @@ public class ScrapedProduction
     public string? Tags { get; set; }
     public int? RunningTimeMinutes { get; set; }
     public List<ScrapedShow> Shows { get; set; } = [];
+    public string? ArtistName { get; set; }
+    public string? ArtistSlug { get; set; }
 }
 
 public class ScrapedShow

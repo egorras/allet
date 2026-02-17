@@ -28,7 +28,6 @@ public class HomeTests : BunitContext
             Title = "Test Production",
             Slug = "test-prod", // Required by EF config likely
             Source = "Test",
-            Season = "2024/2025",
             Shows = new List<Show>
             {
                 new Show { Id = 1, Date = DateTime.UtcNow.AddDays(1), VenueId = 1, Title = "Test Show" }
