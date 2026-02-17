@@ -3,16 +3,20 @@ window.alletMap = {
 
     // Helper to wait for element to be in DOM
     _waitForElement: function (selector, callback) {
+        console.log('[Mapbox] Waiting for element:', selector);
         var element = document.getElementById(selector);
         if (element) {
+            console.log('[Mapbox] Element found immediately:', selector);
             callback(element);
             return;
         }
 
+        console.log('[Mapbox] Element not found, setting up observer for:', selector);
         // Use MutationObserver to wait for element
         var observer = new MutationObserver(function (mutations, obs) {
             var el = document.getElementById(selector);
             if (el) {
+                console.log('[Mapbox] Element found via observer:', selector);
                 obs.disconnect();
                 callback(el);
             }
@@ -221,12 +225,18 @@ window.alletMap = {
         var self = this;
 
         // Wait for table to be in DOM
+        console.log('[Mapbox] bindTableHover called for mapId:', mapId, 'tableId:', tableId);
         this._waitForElement(tableId, function (table) {
+            console.log('[Mapbox] Table element received, binding events');
             var entry = self._maps[mapId];
-            if (!entry) return;
+            if (!entry) {
+                console.warn('[Mapbox] No map entry found for:', mapId);
+                return;
+            }
 
             // Remove old listeners if they exist
             if (entry.tableListeners) {
+                console.log('[Mapbox] Removing old listeners');
                 table.removeEventListener('mouseover', entry.tableListeners.mouseover);
                 table.removeEventListener('mouseleave', entry.tableListeners.mouseleave);
                 table.removeEventListener('click', entry.tableListeners.click);
@@ -284,6 +294,7 @@ window.alletMap = {
             table.addEventListener('mouseover', mouseoverHandler);
             table.addEventListener('mouseleave', mouseleaveHandler);
             table.addEventListener('click', clickHandler);
+            console.log('[Mapbox] Event listeners attached successfully');
         });
     }
 };

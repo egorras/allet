@@ -1,8 +1,21 @@
+/* Sticky navbar with backdrop blur */
+.navbar {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    z-index: 1000;
+    transition: box-shadow 0.3s ease;
+}
+
 .navbar-brand {
     font-weight: 700;
     letter-spacing: -0.02em;
     font-size: 1.5rem;
     color: #1e293b !important;
+    transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover {
+    transform: translateY(-1px);
 }
 
 .nav-link {
@@ -10,12 +23,30 @@
     color: #64748b !important;
     padding: 0.5rem 1rem !important;
     border-radius: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
 }
 
 .nav-link:hover {
     color: #4f46e5 !important;
     background-color: #f1f5f9;
+    transform: translateY(-1px);
+}
+
+.nav-link:hover::after {
+    width: 80%;
 }
 
 .nav-link.active {
@@ -24,6 +55,10 @@
     font-weight: 600;
 }
 
+.nav-link.active::after {
+    width: 80%;
+}
+
 .box-shadow {
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
 }
