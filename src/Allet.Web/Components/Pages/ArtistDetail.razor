@@ -66,11 +66,11 @@ else
             </div>
             <div class="col-auto">
                 <label class="form-label small mb-0">From</label>
-                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateFrom" @bind:after="ApplyFilters" />
+                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateFrom" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
             </div>
             <div class="col-auto">
                 <label class="form-label small mb-0">To</label>
-                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateTo" @bind:after="ApplyFilters" />
+                <input type="date" class="form-control form-control-sm" style="width: auto;" @bind="filterDateTo" @bind:after="ApplyFilters" @bind:format="yyyy-MM-dd" />
             </div>
         </div>
 
@@ -131,9 +131,9 @@ else
     private string? mapboxToken;
 
     private string filterCountry = "";
-    private string? filterDateFrom;
-    private string? filterDateTo;
-    private string filterKey => $"{filterCountry}|{filterDateFrom ?? ""}|{filterDateTo ?? ""}";
+    private DateTime? filterDateFrom;
+    private DateTime? filterDateTo;
+    private string filterKey => $"{filterCountry}|{filterDateFrom?.ToString("yyyy-MM-dd") ?? ""}|{filterDateTo?.ToString("yyyy-MM-dd") ?? ""}";
 
     private sealed record ShowWithContext(Show Show, Production Production, Venue? Venue);
 
@@ -167,6 +167,7 @@ else
             .Where(c => !string.IsNullOrEmpty(c))
             .Distinct()
             .OrderBy(c => c)
+            .Cast<string>()
             .ToList();
 
         ApplyFilters();
@@ -174,20 +175,13 @@ else
 
     private void ApplyFilters()
     {
-        DateTime? from = null;
-        DateTime? to = null;
-        if (!string.IsNullOrEmpty(filterDateFrom) && DateTime.TryParse(filterDateFrom, out var fromParsed))
-            from = fromParsed;
-        if (!string.IsNullOrEmpty(filterDateTo) && DateTime.TryParse(filterDateTo, out var toParsed))
-            to = toParsed;
-
         filteredShows = allShows.Where(x =>
         {
             if (!string.IsNullOrEmpty(filterCountry) && !string.Equals(GetCountry(x.Venue), filterCountry, StringComparison.OrdinalIgnoreCase))
                 return false;
-            if (from.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date < from.Value.Date))
+            if (filterDateFrom.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date < filterDateFrom.Value.Date))
                 return false;
-            if (to.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date > to.Value.Date))
+            if (filterDateTo.HasValue && (x.Show.Date is null || x.Show.Date.Value.Date > filterDateTo.Value.Date))
                 return false;
             return true;
         }).ToList();
