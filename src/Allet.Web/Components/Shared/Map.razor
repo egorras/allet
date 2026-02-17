@@ -21,6 +21,9 @@
     [Parameter] public string? AccessToken { get; set; }
 
     public string MapId { get; } = "map-" + Guid.NewGuid().ToString("N")[..8];
+    
+    private bool _mapInitialized = false;
+    private List<MapMarker>? _previousMarkers;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -34,15 +37,18 @@
 
         try
         {
-            if (firstRender)
+            if (!_mapInitialized)
             {
-                // Initialize map only on first render
+                // Initialize map only once
                 await JS.InvokeVoidAsync("window.alletMap.init", MapId, AccessToken, markers);
+                _mapInitialized = true;
+                _previousMarkers = Markers;
             }
-            else
+            else if (_previousMarkers != Markers)
             {
-                // Update markers on subsequent renders (e.g., after filtering)
+                // Update markers when the marker list reference changes
                 await JS.InvokeVoidAsync("window.alletMap.updateMarkers", MapId, markers);
+                _previousMarkers = Markers;
             }
         }
         catch
