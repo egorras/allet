@@ -68,7 +68,7 @@ public class ZazTourScraper(HttpClient httpClient, ILogger<ZazTourScraper> logge
                     }
 
                     var venueDisplay = string.Join(", ",
-                        new[] { venueName, city, country }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                        new[] { venueName, city }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
                     string? ticketUrl = null;
                     if (ev.TryGetProperty("offers", out var offers))

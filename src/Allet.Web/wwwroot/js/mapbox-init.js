@@ -3,88 +3,118 @@ window.alletMap = {
     init: function (mapId, accessToken, markers) {
         if (typeof mapboxgl === 'undefined') return;
         mapboxgl.accessToken = accessToken;
+
+        // normalize property names (Blazor may send PascalCase or camelCase)
+        markers = (markers || []).map(function (m) {
+            return {
+                label: m.label || m.Label || '',
+                lat: m.lat || m.Lat || 0,
+                lng: m.lng || m.Lng || 0,
+                color: m.color || m.Color || '#4f46e5'
+            };
+        });
+
         var center = [0, 20];
         var zoom = 2;
-        if (markers && markers.length > 0) {
-            center = [markers[0].lng || markers[0].Lng, markers[0].lat || markers[0].Lat];
+        if (markers.length > 0) {
+            center = [markers[0].lng, markers[0].lat];
             if (markers.length === 1) zoom = 8;
         }
+
         var map = new mapboxgl.Map({
             container: mapId,
             style: 'mapbox://styles/mapbox/light-v11',
             center: center,
             zoom: zoom
         });
-        // normalize marker property names (Blazor may send PascalCase or camelCase)
-        markers = markers.map(function (m) {
-            return {
-                label: m.label || m.Label || '',
-                lat: m.lat || m.Lat || 0,
-                lng: m.lng || m.Lng || 0,
-                color: m.color || m.Color || null
-            };
-        });
+
         if (markers.length > 1) {
             var bounds = new mapboxgl.LngLatBounds();
-            markers.forEach(function (m) {
-                bounds.extend([m.lng, m.lat]);
-            });
+            markers.forEach(function (m) { bounds.extend([m.lng, m.lat]); });
             map.fitBounds(bounds, { padding: 40, maxZoom: 10 });
         }
-        var dotEls = [];
-        var markerObjs = [];
-        markers.forEach(function (m, i) {
-            var el = document.createElement('div');
-            el.className = 'mapbox-marker';
-            el.style.width = '20px';
-            el.style.height = '20px';
-            el.style.display = 'flex';
-            el.style.alignItems = 'center';
-            el.style.justifyContent = 'center';
 
-            var dot = document.createElement('div');
-            var markerColor = m.color || m.Color || '#4f46e5';
-            dot.dataset.color = markerColor;
-            dot.style.width = '12px';
-            dot.style.height = '12px';
-            dot.style.borderRadius = '50%';
-            dot.style.backgroundColor = markerColor;
-            dot.style.border = '2px solid white';
-            dot.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3)';
-            dot.style.transition = 'width 0.15s, height 0.15s, background-color 0.15s';
-            el.appendChild(dot);
+        var popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 10 });
 
-            var popup = m.label ? new mapboxgl.Popup({ offset: 12 }).setText(m.label) : null;
-            var marker = new mapboxgl.Marker(el).setLngLat([m.lng, m.lat]).setPopup(popup).addTo(map);
-            dotEls.push(dot);
-            markerObjs.push(marker);
+        map.on('load', function () {
+            var features = markers.map(function (m, i) {
+                return {
+                    type: 'Feature',
+                    id: i,
+                    properties: { label: m.label, color: m.color },
+                    geometry: { type: 'Point', coordinates: [m.lng, m.lat] }
+                };
+            });
+
+            map.addSource('markers', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: features }
+            });
+
+            map.addLayer({
+                id: 'markers-circle',
+                type: 'circle',
+                source: 'markers',
+                paint: {
+                    'circle-radius': [
+                        'case',
+                        ['boolean', ['feature-state', 'highlight'], false],
+                        10, 6
+                    ],
+                    'circle-color': ['get', 'color'],
+                    'circle-stroke-width': [
+                        'case',
+                        ['boolean', ['feature-state', 'highlight'], false],
+                        3, 2
+                    ],
+                    'circle-stroke-color': [
+                        'case',
+                        ['boolean', ['feature-state', 'highlight'], false],
+                        '#f59e0b', '#ffffff'
+                    ],
+                    'circle-radius-transition': { duration: 150 },
+                    'circle-stroke-width-transition': { duration: 150 }
+                }
+            });
+
+            // Map hover: show popup
+            map.on('mouseenter', 'markers-circle', function (e) {
+                map.getCanvas().style.cursor = 'pointer';
+                var f = e.features[0];
+                if (f && f.properties.label) {
+                    popup.setLngLat(f.geometry.coordinates).setText(f.properties.label).addTo(map);
+                }
+            });
+            map.on('mouseleave', 'markers-circle', function () {
+                map.getCanvas().style.cursor = '';
+                popup.remove();
+            });
         });
-        this._maps[mapId] = { map: map, dotEls: dotEls, markerObjs: markerObjs };
+
+        this._maps[mapId] = { map: map, popup: popup, markers: markers };
     },
+
     highlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var dot = entry.dotEls[index];
-        if (!dot) return;
-        dot.style.width = '22px';
-        dot.style.height = '22px';
-        dot.style.backgroundColor = '#f59e0b';
-        dot.parentElement.style.zIndex = '10';
-        var marker = entry.markerObjs[index];
-        if (marker && marker.getPopup() && !marker.getPopup().isOpen()) marker.togglePopup();
+        var map = entry.map;
+        if (!map.getSource('markers')) return;
+        map.setFeatureState({ source: 'markers', id: index }, { highlight: true });
+        var m = entry.markers[index];
+        if (m && m.label) {
+            entry.popup.setLngLat([m.lng, m.lat]).setText(m.label).addTo(map);
+        }
     },
+
     unhighlight: function (mapId, index) {
         var entry = this._maps[mapId];
         if (!entry) return;
-        var dot = entry.dotEls[index];
-        if (!dot) return;
-        dot.style.width = '12px';
-        dot.style.height = '12px';
-        dot.style.backgroundColor = dot.dataset.color || '#4f46e5';
-        dot.parentElement.style.zIndex = '';
-        var marker = entry.markerObjs[index];
-        if (marker && marker.getPopup() && marker.getPopup().isOpen()) marker.togglePopup();
+        var map = entry.map;
+        if (!map.getSource('markers')) return;
+        map.setFeatureState({ source: 'markers', id: index }, { highlight: false });
+        entry.popup.remove();
     },
+
     bindTableHover: function (mapId, tableId) {
         var table = document.getElementById(tableId);
         if (!table) return;

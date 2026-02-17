@@ -93,6 +93,7 @@ else
                                 <th>Date</th>
                                 <th>Artist</th>
                                 <th>Venue</th>
+                                <th title="Country"></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -101,6 +102,7 @@ else
                             {
                                 var idx = item.MarkerIndex;
                                 var color = GetArtistColor(item.ArtistId);
+                                var flag = Allet.Web.Services.CountryFlagHelper.ToFlagEmoji(GetCountry(item.Venue));
                                 <tr style="cursor: pointer; border-left: 3px solid @color;" data-marker="@idx">
                                     <td>@item.Show.Date?.ToString("yyyy-MM-dd")</td>
                                     <td>
@@ -114,6 +116,7 @@ else
                                             <small class="text-muted d-block">@item.Venue.City</small>
                                         }
                                     </td>
+                                    <td title="@(GetCountry(item.Venue) ?? "")">@(flag ?? "")</td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(item.Show.Url))
                                         {
