@@ -187,8 +187,6 @@ else
     {
         if (firstRender && mapRef is not null)
         {
-            // Small delay to let the map init complete first
-            await Task.Delay(200);
             try
             {
                 await JS.InvokeVoidAsync("window.alletMap.bindTableHover", mapRef.MapId, tableId);

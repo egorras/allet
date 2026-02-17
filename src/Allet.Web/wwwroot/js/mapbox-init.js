@@ -6,7 +6,7 @@ window.alletMap = {
         var center = [0, 20];
         var zoom = 2;
         if (markers && markers.length > 0) {
-            center = [markers[0].lng, markers[0].lat];
+            center = [markers[0].lng || markers[0].Lng, markers[0].lat || markers[0].Lat];
             if (markers.length === 1) zoom = 8;
         }
         var map = new mapboxgl.Map({
@@ -15,7 +15,16 @@ window.alletMap = {
             center: center,
             zoom: zoom
         });
-        if (markers && markers.length > 1) {
+        // normalize marker property names (Blazor may send PascalCase or camelCase)
+        markers = markers.map(function (m) {
+            return {
+                label: m.label || m.Label || '',
+                lat: m.lat || m.Lat || 0,
+                lng: m.lng || m.Lng || 0,
+                color: m.color || m.Color || null
+            };
+        });
+        if (markers.length > 1) {
             var bounds = new mapboxgl.LngLatBounds();
             markers.forEach(function (m) {
                 bounds.extend([m.lng, m.lat]);
@@ -34,7 +43,7 @@ window.alletMap = {
             el.style.justifyContent = 'center';
 
             var dot = document.createElement('div');
-            var markerColor = m.color || '#4f46e5';
+            var markerColor = m.color || m.Color || '#4f46e5';
             dot.dataset.color = markerColor;
             dot.style.width = '12px';
             dot.style.height = '12px';
@@ -79,17 +88,26 @@ window.alletMap = {
     bindTableHover: function (mapId, tableId) {
         var table = document.getElementById(tableId);
         if (!table) return;
-        table.addEventListener('mouseenter', function (e) {
+        var currentRow = null;
+        table.addEventListener('mouseover', function (e) {
             var row = e.target.closest('tr[data-marker]');
-            if (!row) return;
-            var idx = parseInt(row.dataset.marker, 10);
-            if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
-        }, true);
-        table.addEventListener('mouseleave', function (e) {
-            var row = e.target.closest('tr[data-marker]');
-            if (!row) return;
-            var idx = parseInt(row.dataset.marker, 10);
-            if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
-        }, true);
+            if (row === currentRow) return;
+            if (currentRow) {
+                var oldIdx = parseInt(currentRow.dataset.marker, 10);
+                if (!isNaN(oldIdx) && oldIdx >= 0) window.alletMap.unhighlight(mapId, oldIdx);
+            }
+            currentRow = row;
+            if (row) {
+                var idx = parseInt(row.dataset.marker, 10);
+                if (!isNaN(idx) && idx >= 0) window.alletMap.highlight(mapId, idx);
+            }
+        });
+        table.addEventListener('mouseleave', function () {
+            if (currentRow) {
+                var idx = parseInt(currentRow.dataset.marker, 10);
+                if (!isNaN(idx) && idx >= 0) window.alletMap.unhighlight(mapId, idx);
+                currentRow = null;
+            }
+        });
     }
 };
