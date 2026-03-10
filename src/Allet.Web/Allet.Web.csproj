@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.4" />
     <ProjectReference Include="..\Allet.ServiceDefaults\Allet.ServiceDefaults.csproj" />
   </ItemGroup>
 
