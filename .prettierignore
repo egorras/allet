@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+apps/web/src/routeTree.gen.ts
+apps/web/playwright-report
+apps/web/test-results
+
+# Documents and vendored config we do not reformat
+ALLET_PLAN.md
+skills-lock.json
+.claude
+.agents
