@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { z } from 'zod'
 import { getApi } from './client'
 
 type State<T> =
   { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: T }
-export function useApi<T>(path: `/api/${string}`, schema: z.ZodType<T>): State<T> {
+
+export function useApi<T>(
+  path: `/api/${string}`,
+  schema: z.ZodType<T>,
+): State<T> & {
+  reload: () => void
+} {
+  const [nonce, setNonce] = useState(0)
   const [result, setResult] = useState<{ path: string; state: State<T> }>({
     path,
     state: { status: 'loading' },
@@ -30,6 +37,9 @@ export function useApi<T>(path: `/api/${string}`, schema: z.ZodType<T>): State<T
     return () => {
       controller.abort()
     }
-  }, [path, schema])
-  return result.path === path ? result.state : { status: 'loading' }
+  }, [path, schema, nonce])
+  const reload = useCallback(() => {
+    setNonce((value) => value + 1)
+  }, [])
+  return { ...(result.path === path ? result.state : { status: 'loading' as const }), reload }
 }

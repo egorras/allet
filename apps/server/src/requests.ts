@@ -13,6 +13,30 @@ export function retryAfter(value: string | null, now: number): number {
   return Number.isFinite(until) ? Math.max(now, until) : 0
 }
 
+/**
+ * Earliest time a request would be allowed, without spending anything. The
+ * scheduler asks this before starting a run, so a refused attempt never
+ * becomes a failed import in the history. `reserveRequest` re-checks the same
+ * limits inside its transaction, immediately before the request is sent.
+ */
+export async function nextAllowedAt(client: Client, now: number): Promise<number> {
+  const gate = (
+    await client.execute({ sql: 'SELECT * FROM request_gate WHERE service = ?', args: [SERVICE] })
+  ).rows[0]
+  const attempts = await client.execute({
+    sql: 'SELECT sent_at FROM request_attempts WHERE service = ? AND sent_at > ? ORDER BY sent_at',
+    args: [SERVICE, now - 86_400_000],
+  })
+  const hour = attempts.rows.filter((row) => Number(row.sent_at) > now - 3_600_000)
+  return Math.max(
+    now,
+    Number(gate?.next_at ?? 0),
+    Number(gate?.paused_until ?? 0),
+    hour.length >= policy.hourly ? Number(hour[0]?.sent_at) + 3_600_000 : 0,
+    attempts.rows.length >= policy.daily ? Number(attempts.rows[0]?.sent_at) + 86_400_000 : 0,
+  )
+}
+
 export async function reserveRequest(client: Client, now: number) {
   const tx = await client.transaction('write')
   try {

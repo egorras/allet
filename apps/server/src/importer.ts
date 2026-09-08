@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { eq, sql } from 'drizzle-orm'
 import type { Database } from './db/client'
-import { performances, productions, runs, sources, venues } from './db/schema'
+import { performances, productions, runLog, runs, sources, venues } from './db/schema'
 import { deriveProductionUrlPath, parseMonth, sourceKeyForPath, ParseError } from './budapest/parse'
 import { requestMonth, RequestError } from './requests'
 
@@ -46,32 +46,49 @@ export function programmeRecords(html: string, month: string) {
     })
 }
 
+export class ImportBusyError extends Error {}
+
 export async function importMonth(
   database: Database,
   month: string,
   load: () => Promise<string> = () => requestMonth(database.client, month),
   now = () => new Date(),
+  trigger: 'manual' | 'scheduled' = 'manual',
 ) {
   if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month))
     throw new Error('Expected month YYYY-MM (2000–2099)')
   const startedAt = now().toISOString()
   const runId = randomUUID()
+  const log = (code: 'started' | 'fetched' | 'parsed' | 'stored' | 'failed', detail = {}) =>
+    database.db
+      .insert(runLog)
+      .values({ runId, at: now().toISOString(), code, detail: JSON.stringify(detail) })
   // A one-request import has a 30s request deadline. An older lease cannot
   // publish afterwards: ownership is rechecked in the write transaction.
   await database.client.execute({
     sql: "UPDATE import_runs SET status = 'error', error_code = 'interrupted', finished_at = ? WHERE status = 'running' AND started_at < ?",
     args: [startedAt, new Date(now().getTime() - 300_000).toISOString()],
   })
-  await database.db
-    .insert(runs)
-    .values({ id: runId, sourceKey: SOURCE, month, status: 'running', startedAt })
+  // One import at a time per source, enforced by a partial unique index, so a
+  // scheduled tick and a manual run cannot both be spending the budget.
+  try {
+    await database.db
+      .insert(runs)
+      .values({ id: runId, sourceKey: SOURCE, month, status: 'running', startedAt, trigger })
+  } catch {
+    throw new ImportBusyError('An import is already running for this source')
+  }
+  await log('started', { month, trigger })
   let phase: 'request' | 'parse' | 'storage' = 'request'
   try {
     const html = await load()
+    await log('fetched', { bytes: html.length })
     phase = 'parse'
     const records = programmeRecords(html, month)
+    await log('parsed', { count: records.length })
     const observedAt = now().toISOString()
     phase = 'storage'
+    const counts = { created: 0, updated: 0, unchanged: 0 }
     await database.db.transaction(async (tx) => {
       const owned = await tx.select().from(runs).where(eq(runs.id, runId))
       if (owned[0]?.status !== 'running') throw new Error('Import lease expired')
@@ -105,6 +122,23 @@ export async function importMonth(
           ticketUrl: event.ticketUrl,
           observedAt,
         }
+        // Counted honestly: an import that changed nothing says so rather
+        // than reporting every record it saw as work done.
+        const [existing] = await tx
+          .select()
+          .from(performances)
+          .where(eq(performances.id, record.id))
+        if (!existing) counts.created++
+        else if (
+          existing.date !== performance.date ||
+          existing.time !== performance.time ||
+          existing.sourceUrl !== performance.sourceUrl ||
+          existing.ticketUrl !== performance.ticketUrl ||
+          existing.productionId !== performance.productionId ||
+          existing.venueId !== performance.venueId
+        )
+          counts.updated++
+        else counts.unchanged++
         await tx
           .insert(performances)
           .values(performance)
@@ -120,19 +154,18 @@ export async function importMonth(
         sql`UPDATE request_gate SET failures = 0, paused_until = 0 WHERE service = 'opera.hu'`,
       )
     })
+    await log('stored', counts)
     // Only valid parsed pages clear a previous source failure. The slow spacing
     // remains in force after this single probe; no automatic catch-up runs.
-    return { runId, count: records.length }
+    return { runId, count: records.length, ...counts }
   } catch (error) {
+    const errorCode =
+      error instanceof ParseError ? 'parse' : error instanceof RequestError ? 'request' : phase
     await database.db
       .update(runs)
-      .set({
-        status: 'error',
-        finishedAt: now().toISOString(),
-        errorCode:
-          error instanceof ParseError ? 'parse' : error instanceof RequestError ? 'request' : phase,
-      })
+      .set({ status: 'error', finishedAt: now().toISOString(), errorCode })
       .where(eq(runs.id, runId))
+    await log('failed', { reason: errorCode })
     throw error
   }
 }

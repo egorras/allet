@@ -8,7 +8,10 @@
     "node": ">=22.20.0 <23"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @allet/web --filter @allet/server dev",
+    "dev": "pnpm --parallel \"/^dev:/\"",
+    "dev:web": "pnpm --filter @allet/web dev",
+    "dev:api": "pnpm --filter @allet/server dev",
+    "dev:worker": "pnpm --filter @allet/server worker",
     "build": "pnpm -r --if-present build",
     "preview": "pnpm --filter @allet/web preview",
     "typecheck": "pnpm -r typecheck",

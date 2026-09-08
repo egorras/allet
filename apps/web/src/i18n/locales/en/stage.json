@@ -45,7 +45,7 @@
     "noAvailability": "Ticket availability is not monitored yet.",
     "sourceDescription": "Budapest programme: performances at the Opera House and Eiffel Art Studios. Imports are manual, one month at a time.",
     "neverImported": "No programme has been imported yet.",
-    "adminOnly": "Imports are managed locally by the app operator. Web import controls will be available after household sign-in is connected.",
+    "adminOnly": "This server has no sign-in yet, so it accepts changes only from this device. Nothing here contacts the source: the worker does that, within the shared request budget.",
     "history": "Import history",
     "noRuns": "No imports have been attempted.",
     "imported": "Performances imported: {{count}}",
@@ -59,6 +59,57 @@
       "parse": "The programme page could not be read. Previous data is unchanged.",
       "interrupted": "This import was interrupted. Run the month again.",
       "storage": "The import could not be saved. Previous data is unchanged."
+    },
+    "trigger": {
+      "manual": "Started by hand",
+      "scheduled": "Scheduled"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "hint": "The worker keeps a rolling window of months fresh, one month per check. A pause or a restart never causes a burst: a month that fell behind is imported once, not once for every interval that passed.",
+      "enabled": "Import on a schedule",
+      "window": "Months kept fresh",
+      "interval": "Refresh each month at most",
+      "every": {
+        "60": "Once an hour",
+        "360": "Every 6 hours",
+        "720": "Every 12 hours",
+        "1440": "Once a day",
+        "10080": "Once a week"
+      },
+      "save": "Save schedule",
+      "failed": "The schedule could not be saved."
+    },
+    "tasks": {
+      "title": "Queued months",
+      "hint": "Months in the rolling window appear here on their own. Add a month to import one outside the window; it runs next, then stops being tracked.",
+      "none": "No months are queued.",
+      "add": "Import another month",
+      "queue": "Add to the queue",
+      "due": "Due {{date}}",
+      "soon": "Move to the front",
+      "remove": "Remove",
+      "invalid": "That month cannot be imported.",
+      "failed": "The queue could not be changed.",
+      "failures_one": "{{count}} failed attempt",
+      "failures_other": "{{count}} failed attempts",
+      "origin": {
+        "window": "Rolling window",
+        "request": "Asked for"
+      },
+      "status": {
+        "success": "Last import succeeded",
+        "error": "Last import failed",
+        "deferred": "Waiting for request budget"
+      }
+    },
+    "log": {
+      "title": "Details",
+      "started": "Started",
+      "fetched": "Page received, {{bytes}} bytes",
+      "parsed": "Performances read: {{count}}",
+      "stored": "New: {{created}}, updated: {{updated}}, unchanged: {{unchanged}}",
+      "failed": "Stopped"
     }
   }
 }

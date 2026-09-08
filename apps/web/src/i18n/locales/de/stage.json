@@ -45,7 +45,7 @@
     "noAvailability": "Die Ticketverfügbarkeit wird noch nicht überwacht.",
     "sourceDescription": "Budapester Spielplan: Vorstellungen im Opernhaus und in den Eiffel Art Studios. Der Import erfolgt manuell, jeweils für einen Monat.",
     "neverImported": "Es wurde noch kein Spielplan importiert.",
-    "adminOnly": "Importe werden vom Betreiber lokal gestartet. Die Verwaltung im Browser folgt nach Einrichtung der Haushaltsanmeldung.",
+    "adminOnly": "Dieser Server hat noch keine Anmeldung und nimmt Änderungen deshalb nur von diesem Gerät an. Von hier geht keine Anfrage an die Quelle: das erledigt der Worker im Rahmen des gemeinsamen Anfragebudgets.",
     "history": "Importverlauf",
     "noRuns": "Bisher wurden keine Importe versucht.",
     "imported": "Importierte Vorstellungen: {{count}}",
@@ -59,6 +59,57 @@
       "parse": "Die Spielplanseite konnte nicht gelesen werden. Vorhandene Daten bleiben erhalten.",
       "interrupted": "Dieser Import wurde unterbrochen. Starten Sie den Monat erneut.",
       "storage": "Der Import konnte nicht gespeichert werden. Vorhandene Daten bleiben erhalten."
+    },
+    "trigger": {
+      "manual": "Von Hand gestartet",
+      "scheduled": "Nach Zeitplan"
+    },
+    "schedule": {
+      "title": "Zeitplan",
+      "hint": "Der Worker hält ein gleitendes Fenster von Monaten aktuell, ein Monat pro Prüfung. Eine Pause oder ein Neustart lösen keinen Schwall aus: ein zurückgefallener Monat wird einmal importiert, nicht einmal je verstrichenem Intervall.",
+      "enabled": "Nach Zeitplan importieren",
+      "window": "Monate im Fenster",
+      "interval": "Monat höchstens erneuern",
+      "every": {
+        "60": "Stündlich",
+        "360": "Alle 6 Stunden",
+        "720": "Alle 12 Stunden",
+        "1440": "Täglich",
+        "10080": "Wöchentlich"
+      },
+      "save": "Zeitplan speichern",
+      "failed": "Der Zeitplan konnte nicht gespeichert werden."
+    },
+    "tasks": {
+      "title": "Monate in der Warteschlange",
+      "hint": "Monate aus dem Fenster erscheinen hier von selbst. Fügen Sie einen Monat hinzu, um ihn außerhalb des Fensters zu importieren; er läuft als Nächstes und wird danach nicht weiter verfolgt.",
+      "none": "Keine Monate in der Warteschlange.",
+      "add": "Weiteren Monat importieren",
+      "queue": "Zur Warteschlange hinzufügen",
+      "due": "Fällig {{date}}",
+      "soon": "Nach vorn holen",
+      "remove": "Entfernen",
+      "invalid": "Dieser Monat kann nicht importiert werden.",
+      "failed": "Die Warteschlange konnte nicht geändert werden.",
+      "failures_one": "{{count}} fehlgeschlagener Versuch",
+      "failures_other": "{{count}} fehlgeschlagene Versuche",
+      "origin": {
+        "window": "Gleitendes Fenster",
+        "request": "Angefordert"
+      },
+      "status": {
+        "success": "Letzter Import erfolgreich",
+        "error": "Letzter Import fehlgeschlagen",
+        "deferred": "Wartet auf Anfragebudget"
+      }
+    },
+    "log": {
+      "title": "Einzelheiten",
+      "started": "Gestartet",
+      "fetched": "Seite empfangen, {{bytes}} Bytes",
+      "parsed": "Gelesene Aufführungen: {{count}}",
+      "stored": "Neu: {{created}}, aktualisiert: {{updated}}, unverändert: {{unchanged}}",
+      "failed": "Abgebrochen"
     }
   }
 }

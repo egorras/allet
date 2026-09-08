@@ -23,8 +23,13 @@ async function open(path = ':memory:') {
 }
 afterEach(async () => {
   for (const database of databases.splice(0)) database.client.close()
+  // Windows can hold a just-closed SQLite file for a moment. A directory left
+  // behind in the OS temp folder is not a test failure, and the long retry
+  // ladder this used to wait out overran the hook timeout under load.
   for (const path of directories.splice(0))
-    await rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
+    await rm(path, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 }).catch(
+      () => undefined,
+    )
 })
 
 describe('catalogue import and API', () => {
@@ -57,8 +62,16 @@ describe('catalogue import and API', () => {
     const sources = sourcesSchema.parse(await (await app.request('/api/sources')).json())
     expect(sources.sources[0]?.runs).toHaveLength(2)
     expect((await app.request('/api/productions/missing')).status).toBe(404)
+    // No endpoint performs an import: the API queues months, the worker
+    // spends the budget. The header is the local-write guard, tested in
+    // scheduler.test.ts; sending it here proves the 404 is about routing.
     expect(
-      (await app.request('/api/sources/budapest-opera/import', { method: 'POST' })).status,
+      (
+        await app.request('/api/sources/budapest-opera/import', {
+          method: 'POST',
+          headers: { 'x-allet-local': '1', 'content-type': 'application/json' },
+        })
+      ).status,
     ).toBe(404)
     expect(
       (

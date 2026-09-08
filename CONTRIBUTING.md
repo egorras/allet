@@ -38,6 +38,8 @@ trap, Escape closes dialogs and focus returns to the control that opened them.
   A parser takes HTML and returns records; it does not fetch, and it does not touch the database.
 - Database changes are a new numbered file in `apps/server/src/db`, applied on open and recorded in
   the `migrations` table. Existing migration files are never edited.
+- Scheduling decisions belong in `scheduler.ts` as pure-ish functions over database rows, so they
+  can be tested by moving a clock rather than by waiting. `worker.ts` holds no policy: it ticks.
 
 ## Rules that outlive v0
 
@@ -53,6 +55,10 @@ trap, Escape closes dialogs and focus returns to the control that opened them.
 - **Hiding a module is a display preference**, stored on the device. It is not access control.
 - **Imported data says when it was seen.** A performance carries the time it was last observed, and
   a source carries its last successful import, so a stale page reads as stale rather than as fact.
+- **Downtime never becomes a burst.** Work that fell behind is done once, not once for every
+  interval that passed, and a check that the budget refuses is postponed rather than failed.
+- **Log lines are codes, not sentences.** A run log row stores a code and its numbers; the words
+  come from the EN/RU/DE namespaces like every other string in the interface.
 - Times of day are formatted 24-hour (`hour12: false`).
 
 ## Commits and pull requests
