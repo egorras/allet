@@ -6,7 +6,12 @@ for (const path of ALL_PAGES) {
   test(`opens ${path} directly, with a heading and no console error`, async ({ page }) => {
     const errors: string[] = []
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text())
+      // The deliberately nonexistent production returns a real API 404.
+      if (
+        message.type() === 'error' &&
+        !(path === '/stage/productions/example-production' && message.text().includes('404'))
+      )
+        errors.push(message.text())
     })
     page.on('pageerror', (error) => errors.push(error.message))
 

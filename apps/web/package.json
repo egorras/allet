@@ -18,7 +18,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-i18next": "17.0.13",
-    "zod": "4.5.4"
+    "zod": "4.5.4",
+    "@allet/contracts": "workspace:*"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

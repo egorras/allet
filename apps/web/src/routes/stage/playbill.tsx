@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { catalogueSchema } from '@allet/contracts'
+import { useApi } from '@/shared/api/useApi'
+import { PerformanceList } from '@/modules/stage/PerformanceList'
 
 import {
   playbillFilterKeys,
@@ -22,6 +25,21 @@ function PlaybillPage() {
   const { t } = useTranslation('stage')
   const { t: tFilters } = useTranslation('filters')
   const search = Route.useSearch()
+  const catalogue = useApi('/api/performances', catalogueSchema)
+  const filtered =
+    catalogue.status === 'ready'
+      ? catalogue.data.performances.filter(
+          (performance) =>
+            (!search.q ||
+              `${performance.title} ${performance.composer ?? ''}`
+                .toLocaleLowerCase()
+                .includes(search.q.toLocaleLowerCase())) &&
+            (!search.city ||
+              performance.city.toLocaleLowerCase().includes(search.city.toLocaleLowerCase())) &&
+            (!search.from || performance.date >= search.from) &&
+            (!search.to || performance.date <= search.to),
+        )
+      : []
   const navigate = useNavigate({ from: Route.fullPath })
 
   const setFilter = (patch: PlaybillSearch, replace = false) => {
@@ -67,7 +85,18 @@ function PlaybillPage() {
           }}
         />
       </FilterPanel>
-      <EmptyState description={t('playbill.empty')} />
+      {catalogue.status === 'loading' && <p role="status">{t('catalogue.loading')}</p>}
+      {catalogue.status === 'error' && <p role="status">{t('catalogue.unavailable')}</p>}
+      {catalogue.status === 'ready' &&
+        (filtered.length ? (
+          <PerformanceList performances={filtered} />
+        ) : (
+          <EmptyState
+            description={t(
+              catalogue.data.performances.length ? 'catalogue.noMatches' : 'playbill.empty',
+            )}
+          />
+        ))}
     </>
   )
 }

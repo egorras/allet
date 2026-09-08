@@ -2,7 +2,7 @@
   "playbill": {
     "title": "Spielplan",
     "description": "Vorstellungen der kommenden Saison.",
-    "empty": "Keine Vorstellungen: keine Spielplanquelle angebunden."
+    "empty": "Es wurden noch keine Vorstellungen importiert."
   },
   "watchlist": {
     "title": "Beobachtet",
@@ -34,5 +34,31 @@
     "venue": "Spielstätte",
     "availability": "Verlauf der Verfügbarkeit",
     "notes": "Notizen"
+  },
+  "catalogue": {
+    "loading": "Spielplan wird geladen…",
+    "unavailable": "Der Spielplanserver ist nicht erreichbar. Versuchen Sie es nach dem Start erneut.",
+    "notFound": "Diese Inszenierung ist nicht im importierten Spielplan.",
+    "noMatches": "Keine importierten Vorstellungen entsprechen diesen Filtern.",
+    "localTime": "Ortszeit der Spielstätte · {{zone}}",
+    "observed": "Zuletzt erfasst: {{date}}",
+    "noAvailability": "Die Ticketverfügbarkeit wird noch nicht überwacht.",
+    "sourceDescription": "Budapester Spielplan: Vorstellungen im Opernhaus und in den Eiffel Art Studios. Der Import erfolgt manuell, jeweils für einen Monat.",
+    "neverImported": "Es wurde noch kein Spielplan importiert.",
+    "adminOnly": "Importe werden vom Betreiber lokal gestartet. Die Verwaltung im Browser folgt nach Einrichtung der Haushaltsanmeldung.",
+    "history": "Importverlauf",
+    "noRuns": "Bisher wurden keine Importe versucht.",
+    "imported": "Importierte Vorstellungen: {{count}}",
+    "run": {
+      "running": "Läuft",
+      "success": "Abgeschlossen",
+      "error": "Fehlgeschlagen"
+    },
+    "errors": {
+      "request": "Die Quelle ist nicht erreichbar oder das Anfragebudget ist gesperrt. Vorhandene Daten bleiben erhalten.",
+      "parse": "Die Spielplanseite konnte nicht gelesen werden. Vorhandene Daten bleiben erhalten.",
+      "interrupted": "Dieser Import wurde unterbrochen. Starten Sie den Monat erneut.",
+      "storage": "Der Import konnte nicht gespeichert werden. Vorhandene Daten bleiben erhalten."
+    }
   }
 }

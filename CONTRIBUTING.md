@@ -30,19 +30,29 @@ trap, Escape closes dialogs and focus returns to the control that opened them.
   `src/modules/registry.ts`. There is no second list to keep in sync, and page addresses are typed
   against the generated route tree.
 - Shared code goes to `src/shared` when a second module needs it — not in advance. A new package
-  under `packages/` is created when something outside `apps/web` consumes it.
+  under `packages/` is created when something outside `apps/web` consumes it, which is why
+  `packages/contracts` exists: the server answers with those Zod schemas and the web app parses
+  every response against them.
+- The server keeps a source in one place: its parser and captured page under
+  `apps/server/src/budapest`, its outbound requests in `requests.ts`, its writes in `importer.ts`.
+  A parser takes HTML and returns records; it does not fetch, and it does not touch the database.
+- Database changes are a new numbered file in `apps/server/src/db`, applied on open and recorded in
+  the `migrations` table. Existing migration files are never edited.
 
 ## Rules that outlive v0
 
-- **No external requests in v0.** No ticket site, Telegram, AI provider, map tiles or web fonts.
-  `fetch`, `XMLHttpRequest` and `WebSocket` are blocked by lint in app source, and a browser test
-  asserts that every request stays on the app's own origin. When a server does arrive, external
-  calls go through the shared request budget described in plan §7 — never directly from a page.
+- **The browser stays on its own origin.** No ticket site, Telegram, AI provider, map tiles or web
+  fonts. `fetch`, `XMLHttpRequest` and `WebSocket` are blocked by lint in app source except
+  `src/shared/api/client.ts`, and a browser test asserts that every request stays on the app's own
+  origin. External calls belong on the server, and go through the shared request budget described
+  in plan §7 — never directly from a page.
 - **No invented data.** Lists show honest empty states; a control that cannot work is disabled and
   explains itself rather than faking a save. Fixtures belong in tests.
 - **Day-level dates stay day-level.** A date without a time is not converted to UTC midnight; events
   are read in the local time of their place (plan §4).
 - **Hiding a module is a display preference**, stored on the device. It is not access control.
+- **Imported data says when it was seen.** A performance carries the time it was last observed, and
+  a source carries its last successful import, so a stale page reads as stale rather than as fact.
 - Times of day are formatted 24-hour (`hour12: false`).
 
 ## Commits and pull requests

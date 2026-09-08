@@ -2,7 +2,7 @@
   "playbill": {
     "title": "Playbill",
     "description": "Performances of the coming season.",
-    "empty": "No performances: no playbill source is connected."
+    "empty": "No performances have been imported yet."
   },
   "watchlist": {
     "title": "Watchlist",
@@ -34,5 +34,31 @@
     "venue": "Venue",
     "availability": "Availability history",
     "notes": "Notes"
+  },
+  "catalogue": {
+    "loading": "Loading catalogue…",
+    "unavailable": "The catalogue server is unavailable. Try again after it is running.",
+    "notFound": "This production is not in the imported catalogue.",
+    "noMatches": "No imported performances match these filters.",
+    "localTime": "Local venue time · {{zone}}",
+    "observed": "Last observed: {{date}}",
+    "noAvailability": "Ticket availability is not monitored yet.",
+    "sourceDescription": "Budapest programme: performances at the Opera House and Eiffel Art Studios. Imports are manual, one month at a time.",
+    "neverImported": "No programme has been imported yet.",
+    "adminOnly": "Imports are managed locally by the app operator. Web import controls will be available after household sign-in is connected.",
+    "history": "Import history",
+    "noRuns": "No imports have been attempted.",
+    "imported": "Performances imported: {{count}}",
+    "run": {
+      "running": "Running",
+      "success": "Completed",
+      "error": "Failed"
+    },
+    "errors": {
+      "request": "The source could not be fetched or its request budget is paused. Previous data is unchanged.",
+      "parse": "The programme page could not be read. Previous data is unchanged.",
+      "interrupted": "This import was interrupted. Run the month again.",
+      "storage": "The import could not be saved. Previous data is unchanged."
+    }
   }
 }

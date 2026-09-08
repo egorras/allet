@@ -60,6 +60,14 @@ export default tseslint.config(
     },
   },
   {
+    files: ['apps/server/**/*.ts'],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
+    files: ['apps/web/src/shared/api/client.ts'],
+    rules: { 'no-restricted-globals': 'off' },
+  },
+  {
     files: ['**/*.{js,mjs,cjs}'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: { ...globals.node } },

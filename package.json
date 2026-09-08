@@ -8,16 +8,18 @@
     "node": ">=22.20.0 <23"
   },
   "scripts": {
-    "dev": "pnpm --filter @allet/web dev",
-    "build": "pnpm --filter @allet/web build",
+    "dev": "pnpm --parallel --filter @allet/web --filter @allet/server dev",
+    "build": "pnpm -r --if-present build",
     "preview": "pnpm --filter @allet/web preview",
-    "typecheck": "pnpm --filter @allet/web typecheck",
+    "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:unit": "pnpm --filter @allet/web test:unit",
-    "test:e2e": "pnpm --filter @allet/web test:e2e"
+    "test:unit": "pnpm -r --if-present test:unit",
+    "test:e2e": "pnpm --filter @allet/web test:e2e",
+    "import:budapest": "pnpm --filter @allet/server import:budapest",
+    "db:migrate": "pnpm --filter @allet/server db:migrate"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

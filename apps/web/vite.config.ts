@@ -17,6 +17,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  server: { port: 5173 },
-  preview: { port: 4173 },
+  server: { port: 5173, proxy: { '/api': 'http://127.0.0.1:3001' } },
+  preview: {
+    port: 4173,
+    proxy: { '/api': process.env.ALLET_API_TARGET ?? 'http://127.0.0.1:3001' },
+  },
 })

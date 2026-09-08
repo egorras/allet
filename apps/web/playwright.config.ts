@@ -23,11 +23,20 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   // Tests run against the production build, like CI does.
-  webServer: {
-    // Bind explicitly: vite preview otherwise listens on ::1 only.
-    command: `pnpm exec vite preview --host 127.0.0.1 --port ${String(PORT)} --strictPort`,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @allet/server exec tsx tests/e2e-server.ts',
+      url: 'http://127.0.0.1:3002/api/health',
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      // Bind explicitly: vite preview otherwise listens on ::1 only.
+      command: `pnpm exec vite preview --host 127.0.0.1 --port ${String(PORT)} --strictPort`,
+      env: { ALLET_API_TARGET: 'http://127.0.0.1:3002' },
+      url: baseURL,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+  ],
 })

@@ -14,8 +14,11 @@ test.describe('language', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Афиша' })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
     // Empty states and filter labels are translated too, not only the navigation.
-    await expect(page.getByText('Показов нет: источник афиши не подключён.')).toBeVisible()
     await expect(page.getByText('Фильтры не заданы.')).toBeVisible()
+    await page.getByRole('searchbox', { name: 'Текст', exact: true }).fill('нет такого показа')
+    await expect(
+      page.getByText('В загруженной афише нет показов с такими фильтрами.'),
+    ).toBeVisible()
 
     await page.reload()
     await expect(page.getByRole('heading', { level: 1, name: 'Афиша' })).toBeVisible()

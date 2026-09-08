@@ -1,0 +1,12 @@
+CREATE TABLE sources (key TEXT PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, last_success_at TEXT);
+INSERT INTO sources(key, name, url) VALUES ('budapest-opera', 'Hungarian State Opera', 'https://www.opera.hu/en/programme/');
+CREATE TABLE venues (id TEXT PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, time_zone TEXT NOT NULL);
+CREATE TABLE productions (id TEXT PRIMARY KEY, source_key TEXT NOT NULL REFERENCES sources(key), title TEXT NOT NULL, composer TEXT, source_url TEXT NOT NULL);
+CREATE TABLE performances (id TEXT PRIMARY KEY, production_id TEXT NOT NULL REFERENCES productions(id), venue_id TEXT NOT NULL REFERENCES venues(id), date TEXT NOT NULL, time TEXT NOT NULL, source_url TEXT NOT NULL, ticket_url TEXT, observed_at TEXT NOT NULL);
+CREATE INDEX performances_date ON performances(date);
+CREATE INDEX performances_production ON performances(production_id);
+CREATE TABLE import_runs (id TEXT PRIMARY KEY, source_key TEXT NOT NULL REFERENCES sources(key), month TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('running','success','error')), started_at TEXT NOT NULL, finished_at TEXT, count INTEGER, error_code TEXT CHECK(error_code IN ('request','parse','interrupted','storage')));
+CREATE UNIQUE INDEX one_running_import ON import_runs(source_key) WHERE status = 'running';
+CREATE TABLE request_gate (service TEXT PRIMARY KEY, next_at INTEGER NOT NULL DEFAULT 0, paused_until INTEGER NOT NULL DEFAULT 0, failures INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE request_attempts (id INTEGER PRIMARY KEY, service TEXT NOT NULL, sent_at INTEGER NOT NULL);
+CREATE INDEX request_attempts_service_time ON request_attempts(service, sent_at);

@@ -10,6 +10,10 @@ lerna-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Runtime data
+apps/server/data/
+*.db
+*.db-shm
+*.db-wal
 pids
 *.pid
 *.seed

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { modules } from '@/modules/registry'
 import { setModuleHidden, useHiddenModules } from '@/shared/prefs/moduleVisibility'
-import { EmptyState } from '@/shared/ui/EmptyState'
+import { Sources } from '@/modules/stage/Sources'
 import { PageHeader } from '@/shared/ui/PageHeader'
 import { Section } from '@/shared/ui/Section'
 
@@ -36,7 +36,7 @@ function ModulesPage() {
         </ul>
       </Section>
       <Section title={t('modules.sources')}>
-        <EmptyState description={t('modules.sourcesEmpty')} />
+        <Sources />
       </Section>
     </>
   )
