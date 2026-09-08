@@ -1,0 +1,20 @@
+{
+  "title": "Home",
+  "description": "What changed, what became available, what is coming up.",
+  "changes": {
+    "title": "Incoming changes",
+    "empty": "No changes: no source is being watched yet."
+  },
+  "availability": {
+    "title": "Found availability",
+    "empty": "No availability checks run in v0."
+  },
+  "plans": {
+    "title": "Upcoming plans",
+    "empty": "No confirmed plans yet."
+  },
+  "offers": {
+    "title": "New offers",
+    "empty": "No offer source is connected."
+  }
+}

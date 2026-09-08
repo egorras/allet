@@ -1,0 +1,20 @@
+{
+  "offers": {
+    "title": "Offers",
+    "description": "Transfers and cruises worth considering.",
+    "empty": "No offers: no travel source is connected."
+  },
+  "saved": {
+    "title": "Saved",
+    "description": "Options kept while you decide.",
+    "empty": "Nothing saved yet."
+  },
+  "offer": {
+    "title": "Offer",
+    "id": "Identifier from the address: {{id}}",
+    "route": "Route",
+    "window": "Handover window",
+    "price": "Price",
+    "conditions": "Conditions"
+  }
+}

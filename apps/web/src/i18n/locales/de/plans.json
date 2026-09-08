@@ -1,0 +1,14 @@
+{
+  "title": "Pläne",
+  "description": "Optionen zum Abwägen und bestätigte Pläne.",
+  "empty": "Noch keine Pläne.",
+  "new": "Neuer Plan",
+  "detail": {
+    "title": "Plan",
+    "id": "Kennung aus der Adresse: {{id}}",
+    "participants": "Teilnehmende",
+    "dates": "Termine",
+    "items": "Enthaltene Einträge",
+    "notes": "Notizen"
+  }
+}

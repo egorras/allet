@@ -1,0 +1,20 @@
+{
+  "offers": {
+    "title": "Angebote",
+    "description": "Überführungen und Kreuzfahrten zur Auswahl.",
+    "empty": "Keine Angebote: keine Reisequelle angebunden."
+  },
+  "saved": {
+    "title": "Gespeichert",
+    "description": "Optionen, die bis zur Entscheidung bleiben.",
+    "empty": "Noch nichts gespeichert."
+  },
+  "offer": {
+    "title": "Angebot",
+    "id": "Kennung aus der Adresse: {{id}}",
+    "route": "Route",
+    "window": "Übergabefenster",
+    "price": "Preis",
+    "conditions": "Bedingungen"
+  }
+}

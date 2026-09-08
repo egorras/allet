@@ -1,0 +1,38 @@
+{
+  "playbill": {
+    "title": "Playbill",
+    "description": "Performances of the coming season.",
+    "empty": "No performances: no playbill source is connected."
+  },
+  "watchlist": {
+    "title": "Watchlist",
+    "description": "Productions and dates you follow.",
+    "empty": "Nothing watched: watching needs a server."
+  },
+  "works": {
+    "title": "Works",
+    "description": "Works, their productions and materials.",
+    "empty": "No works yet."
+  },
+  "visits": {
+    "title": "Visits",
+    "description": "What you actually attended.",
+    "empty": "No visits recorded. A ticket is not proof of a visit."
+  },
+  "work": {
+    "title": "Work",
+    "id": "Identifier from the address: {{id}}",
+    "synopsis": "Synopsis",
+    "libretto": "Libretto",
+    "recordings": "Recordings",
+    "productions": "Productions"
+  },
+  "production": {
+    "title": "Production",
+    "id": "Identifier from the address: {{id}}",
+    "performances": "Performances",
+    "venue": "Venue",
+    "availability": "Availability history",
+    "notes": "Notes"
+  }
+}

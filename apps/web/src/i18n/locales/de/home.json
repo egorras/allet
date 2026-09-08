@@ -1,0 +1,20 @@
+{
+  "title": "Start",
+  "description": "Was sich geändert hat, was verfügbar wurde, was ansteht.",
+  "changes": {
+    "title": "Eingehende Änderungen",
+    "empty": "Keine Änderungen: es wird noch keine Quelle beobachtet."
+  },
+  "availability": {
+    "title": "Gefundene Verfügbarkeit",
+    "empty": "In v0 laufen keine Verfügbarkeitsprüfungen."
+  },
+  "plans": {
+    "title": "Nächste Pläne",
+    "empty": "Noch keine bestätigten Pläne."
+  },
+  "offers": {
+    "title": "Neue Angebote",
+    "empty": "Es ist keine Angebotsquelle angebunden."
+  }
+}

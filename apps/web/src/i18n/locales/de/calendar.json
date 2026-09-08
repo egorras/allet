@@ -1,0 +1,12 @@
+{
+  "title": "Kalender",
+  "description": "Optionen und bestätigte Pläne, einzelne Termine und Zeiträume.",
+  "today": "Heute",
+  "previousMonth": "Voriger Monat",
+  "nextMonth": "Nächster Monat",
+  "legend": {
+    "option": "Option",
+    "confirmed": "Bestätigt"
+  },
+  "empty": "Keine Einträge: Pläne und Termine erscheinen mit den Daten."
+}

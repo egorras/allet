@@ -1,0 +1,12 @@
+{
+  "title": "Calendar",
+  "description": "Options and confirmed plans, single events and intervals.",
+  "today": "Today",
+  "previousMonth": "Previous month",
+  "nextMonth": "Next month",
+  "legend": {
+    "option": "Option",
+    "confirmed": "Confirmed"
+  },
+  "empty": "No entries: plans and dates appear once data exists."
+}
