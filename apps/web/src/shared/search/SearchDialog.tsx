@@ -115,26 +115,29 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
           className="mt-3 max-h-72 overflow-y-auto"
         >
           {results.map((entry, index) => (
+            /* Keyboard interaction for the list belongs to the combobox input (arrows and
+               Enter); the option itself is pointer-only, per the ARIA combobox pattern. */
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <li
               key={entry.path}
               id={`${listId}-${String(index)}`}
               role="option"
               aria-selected={index === highlighted}
-              className={`rounded ${index === highlighted ? 'bg-sunken' : ''}`}
+              // Options are driven from the input via aria-activedescendant, so they are
+              // not tab stops and must not contain their own focusable control.
+              tabIndex={-1}
+              onClick={() => {
+                go(entry)
+              }}
+              onMouseEnter={() => {
+                setActiveIndex(index)
+              }}
+              className={`flex cursor-pointer items-baseline justify-between gap-3 rounded px-2 py-1.5 text-sm ${
+                index === highlighted ? 'bg-sunken' : ''
+              }`}
             >
-              <button
-                type="button"
-                onClick={() => {
-                  go(entry)
-                }}
-                onMouseEnter={() => {
-                  setActiveIndex(index)
-                }}
-                className="flex w-full items-baseline justify-between gap-3 px-2 py-1.5 text-left text-sm"
-              >
-                <span>{entry.label}</span>
-                <span className="text-xs text-ink-muted">{entry.section}</span>
-              </button>
+              <span>{entry.label}</span>
+              <span className="text-xs text-ink-muted">{entry.section}</span>
             </li>
           ))}
         </ul>

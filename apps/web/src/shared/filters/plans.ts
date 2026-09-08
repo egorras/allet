@@ -11,3 +11,8 @@ export const plansSearchSchema = z
   .catch({})
 
 export type PlansSearch = z.output<typeof plansSearchSchema>
+
+export const plansFilterKeys = [
+  'q',
+  'participation',
+] as const satisfies readonly (keyof PlansSearch)[]

@@ -11,3 +11,9 @@ export const offersSearchSchema = z
   .catch({})
 
 export type OffersSearch = z.output<typeof offersSearchSchema>
+
+export const offersFilterKeys = [
+  'q',
+  'from',
+  'to',
+] as const satisfies readonly (keyof OffersSearch)[]

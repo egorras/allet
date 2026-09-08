@@ -9,6 +9,7 @@ export function LanguageSwitcher({ className }: { className?: string | undefined
     <label className={`flex items-center gap-2 text-sm ${className ?? ''}`}>
       <span className="text-ink-muted">{t('language.label')}</span>
       <select
+        data-testid="language-select"
         value={i18n.resolvedLanguage}
         onChange={(event) => {
           const next = event.target.value

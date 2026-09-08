@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { FilterPanel } from '@/shared/filters/FilterPanel'
 import { SelectFilterField, TextFilterField } from '@/shared/filters/fields'
-import { plansSearchSchema, type PlansSearch } from '@/shared/filters/plans'
+import { plansFilterKeys, plansSearchSchema, type PlansSearch } from '@/shared/filters/plans'
 import { countActiveFilters } from '@/shared/filters/schema'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { NotConnectedAction } from '@/shared/ui/NotConnected'
@@ -28,7 +28,7 @@ function PlansPage() {
         actions={<NotConnectedAction label={t('new')} />}
       />
       <FilterPanel
-        activeCount={countActiveFilters(search)}
+        activeCount={countActiveFilters(search, plansFilterKeys)}
         onClear={() => {
           void navigate({ search: {} })
         }}
@@ -38,7 +38,7 @@ function PlansPage() {
           placeholder={tFilters('queryPlaceholder')}
           value={search.q}
           onChange={(q) => {
-            void navigate({ search: (previous) => ({ ...previous, q }) })
+            void navigate({ search: (previous) => ({ ...previous, q }), replace: true })
           }}
         />
         <SelectFilterField

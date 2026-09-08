@@ -22,3 +22,15 @@ export const watchlistSearchSchema = z
   .catch({})
 
 export type WatchlistSearch = z.output<typeof watchlistSearchSchema>
+
+export const playbillFilterKeys = [
+  'q',
+  'city',
+  'from',
+  'to',
+] as const satisfies readonly (keyof PlaybillSearch)[]
+
+export const watchlistFilterKeys = [
+  'q',
+  'status',
+] as const satisfies readonly (keyof WatchlistSearch)[]

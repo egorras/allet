@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { offersSearchSchema, type OffersSearch } from '@/modules/travel/filters'
+import { offersFilterKeys, offersSearchSchema, type OffersSearch } from '@/modules/travel/filters'
 import { FilterPanel } from '@/shared/filters/FilterPanel'
 import { DateFilterField, TextFilterField } from '@/shared/filters/fields'
 import { countActiveFilters } from '@/shared/filters/schema'
@@ -20,15 +20,15 @@ function TravelOffersPage() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
 
-  const setFilter = (patch: OffersSearch) => {
-    void navigate({ search: (previous) => ({ ...previous, ...patch }) })
+  const setFilter = (patch: OffersSearch, replace = false) => {
+    void navigate({ search: (previous) => ({ ...previous, ...patch }), replace })
   }
 
   return (
     <>
       <PageHeader title={t('offers.title')} description={t('offers.description')} />
       <FilterPanel
-        activeCount={countActiveFilters(search)}
+        activeCount={countActiveFilters(search, offersFilterKeys)}
         onClear={() => {
           void navigate({ search: {} })
         }}
@@ -38,7 +38,7 @@ function TravelOffersPage() {
           placeholder={tFilters('queryPlaceholder')}
           value={search.q}
           onChange={(q) => {
-            setFilter({ q })
+            setFilter({ q }, true)
           }}
         />
         <DateFilterField

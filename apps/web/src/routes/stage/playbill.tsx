@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { playbillSearchSchema, type PlaybillSearch } from '@/modules/stage/filters'
+import {
+  playbillFilterKeys,
+  playbillSearchSchema,
+  type PlaybillSearch,
+} from '@/modules/stage/filters'
 import { FilterPanel } from '@/shared/filters/FilterPanel'
 import { DateFilterField, TextFilterField } from '@/shared/filters/fields'
 import { countActiveFilters } from '@/shared/filters/schema'
@@ -20,15 +24,15 @@ function PlaybillPage() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
 
-  const setFilter = (patch: PlaybillSearch) => {
-    void navigate({ search: (previous) => ({ ...previous, ...patch }) })
+  const setFilter = (patch: PlaybillSearch, replace = false) => {
+    void navigate({ search: (previous) => ({ ...previous, ...patch }), replace })
   }
 
   return (
     <>
       <PageHeader title={t('playbill.title')} description={t('playbill.description')} />
       <FilterPanel
-        activeCount={countActiveFilters(search)}
+        activeCount={countActiveFilters(search, playbillFilterKeys)}
         onClear={() => {
           void navigate({ search: {} })
         }}
@@ -38,14 +42,14 @@ function PlaybillPage() {
           placeholder={tFilters('queryPlaceholder')}
           value={search.q}
           onChange={(q) => {
-            setFilter({ q })
+            setFilter({ q }, true)
           }}
         />
         <TextFilterField
           label={tFilters('city')}
           value={search.city}
           onChange={(city) => {
-            setFilter({ city })
+            setFilter({ city }, true)
           }}
         />
         <DateFilterField

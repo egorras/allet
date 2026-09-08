@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { watchlistSearchSchema, type WatchlistSearch } from '@/modules/stage/filters'
+import {
+  watchlistFilterKeys,
+  watchlistSearchSchema,
+  type WatchlistSearch,
+} from '@/modules/stage/filters'
 import { FilterPanel } from '@/shared/filters/FilterPanel'
 import { SelectFilterField, TextFilterField } from '@/shared/filters/fields'
 import { countActiveFilters } from '@/shared/filters/schema'
@@ -24,7 +28,7 @@ function WatchlistPage() {
     <>
       <PageHeader title={t('watchlist.title')} description={t('watchlist.description')} />
       <FilterPanel
-        activeCount={countActiveFilters(search)}
+        activeCount={countActiveFilters(search, watchlistFilterKeys)}
         onClear={() => {
           void navigate({ search: {} })
         }}
@@ -34,7 +38,7 @@ function WatchlistPage() {
           placeholder={tFilters('queryPlaceholder')}
           value={search.q}
           onChange={(q) => {
-            void navigate({ search: (previous) => ({ ...previous, q }) })
+            void navigate({ search: (previous) => ({ ...previous, q }), replace: true })
           }}
         />
         <SelectFilterField

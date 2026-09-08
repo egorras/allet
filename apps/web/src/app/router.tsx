@@ -6,6 +6,9 @@ export const router = createRouter({
   routeTree,
   // Nothing to preload: v0 has no loaders and no data.
   defaultPreload: false,
+  // Drop search parameters no route validated, so a page never sees an unknown
+  // parameter or a value its own schema rejected.
+  search: { strict: true },
   scrollRestoration: true,
 })
 
