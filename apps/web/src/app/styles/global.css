@@ -13,6 +13,15 @@
   --color-accent-ink: oklch(99% 0 0);
 
   --radius-card: 0.625rem;
+
+  /* Spacing that follows the display density preference. */
+  --spacing-card: 1rem;
+  --spacing-page: 1.5rem;
+}
+
+:root[data-density='compact'] {
+  --spacing-card: 0.625rem;
+  --spacing-page: 1rem;
 }
 
 html,

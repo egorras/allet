@@ -11,7 +11,10 @@ export function FilterPanel({ activeCount, onClear, children }: FilterPanelProps
   const { t } = useTranslation('filters')
 
   return (
-    <section aria-label={t('title')} className="mb-4 rounded-card border border-line bg-raised p-4">
+    <section
+      aria-label={t('title')}
+      className="mb-4 rounded-card border border-line bg-raised p-[var(--spacing-card)]"
+    >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p aria-live="polite" className="text-sm text-ink-muted">
           {activeCount === 0 ? t('none') : t('active', { count: activeCount })}

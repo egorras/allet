@@ -40,7 +40,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main id="main" className="flex-1 px-4 py-4 md:px-8 md:py-6">
+        <main
+          id="main"
+          className="flex-1 px-4 py-[var(--spacing-card)] md:px-[var(--spacing-page)] md:py-[var(--spacing-page)]"
+        >
           {children}
         </main>
 

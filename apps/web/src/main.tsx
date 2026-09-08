@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { router } from './app/router'
 import './app/styles/global.css'
 import './i18n'
+import './shared/prefs/density'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element #root is missing from index.html')
