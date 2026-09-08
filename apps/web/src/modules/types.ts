@@ -1,12 +1,18 @@
 import type navEn from '@/i18n/locales/en/nav.json'
+import type { FileRouteTypes } from '@/routeTree.gen'
 import type { IconComponent } from '@/shared/ui/icons'
 
 /** Keys of the `nav` translation namespace — a typo in a label is a type error. */
 export type NavLabelKey = keyof typeof navEn
 
+/**
+ * Addresses of the app's static pages, taken from the generated route tree: a page
+ * that is renamed or removed becomes a compile error in the registry.
+ */
+export type AppPath = Exclude<FileRouteTypes['to'], `${string}$${string}`>
+
 export interface NavPage {
-  /** Must match a route defined under src/routes (checked by a unit test). */
-  path: string
+  path: AppPath
   labelKey: NavLabelKey
   /** Offered by the Ctrl/Cmd+K dialog, which in v0 searches app pages only. */
   searchable: boolean

@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
 
 import type { NavSection } from '@/modules/types'
+import { useVisibleSections } from '@/shared/nav/useVisibleSections'
 
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NavLink } from './NavLink'
-import { useVisibleSections } from './useVisibleSections'
+import { SearchButton } from './SearchButton'
 
 function SectionGroup({ section }: { section: NavSection }) {
   const { t } = useTranslation('nav')
@@ -23,7 +24,7 @@ function SectionGroup({ section }: { section: NavSection }) {
   )
 }
 
-export function SidebarNav() {
+export function SidebarNav({ onOpenSearch }: { onOpenSearch: () => void }) {
   const { t } = useTranslation('nav')
   const { core, modules, settings } = useVisibleSections()
 
@@ -34,6 +35,9 @@ export function SidebarNav() {
     >
       <div className="px-3 py-3">
         <div className="px-2 pb-2 text-base font-semibold">Allet</div>
+        <div className="pb-2">
+          <SearchButton onOpen={onOpenSearch} />
+        </div>
         {core.map((section) =>
           section.pages.map((page) => <NavLink key={page.path} page={page} icon={section.icon} />),
         )}

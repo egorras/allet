@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 
 import { coreSections } from '@/modules/registry'
 import type { NavSection } from '@/modules/types'
+import { useVisibleSections } from '@/shared/nav/useVisibleSections'
 import { Modal } from '@/shared/ui/Modal'
 import { MoreIcon } from '@/shared/ui/icons'
 
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NavLink } from './NavLink'
-import { useVisibleSections } from './useVisibleSections'
 
 /** Home, Calendar, Plans and "More" — the phone layout from ALLET_PLAN.md §3. */
 const TAB_SECTION_IDS = ['home', 'calendar', 'plans']

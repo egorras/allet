@@ -1,0 +1,8 @@
+{
+  "open": "Seiten durchsuchen",
+  "title": "Suche",
+  "placeholder": "Seitenname eingeben",
+  "scopeNote": "v0 durchsucht nur die Seiten dieser App — keine Vorstellungen, Pläne oder Dateien.",
+  "noResults": "Keine Seite passt dazu.",
+  "shortcutHint": "Strg+K"
+}
