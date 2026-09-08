@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+.git
+.github
+.pnpm-store
+apps/server/data
+apps/web/playwright-report
+apps/web/test-results
+*.db
+*.db-shm
+*.db-wal
+.claude
+.agents

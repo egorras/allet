@@ -90,6 +90,31 @@ that a page on another origin cannot set without a preflight the server never an
 stopgap for a loopback server on one machine, and it is replaced by household accounts rather than
 extended.
 
+## Deployment
+
+`allet2.egorras.net` runs on the VPS under Dokploy, the same way quake-stats does, and is reachable
+**over the tailnet only** — its DNS record points at the host's Tailscale address, not its public
+one. There is no sign-in yet, so the tailnet is the access control; do not give this hostname a
+public address until household accounts exist.
+
+`docker-compose.yml` is both the Dokploy deploy target and the way to run the whole thing locally:
+
+```sh
+docker compose up --build     # web on container port 3001, worker beside it
+```
+
+- One image, two commands. `web` runs the API and serves the built web app, so the browser still
+  talks to a single origin and the no-external-requests rule holds without a proxy in front.
+- Both services share `allet-data`, a named volume holding the SQLite file. It is named on purpose:
+  a redeploy replaces the containers and keeps the catalogue, the run history and the request
+  budget's pause state. Losing it would also lose the record of what has already been asked of
+  opera.hu.
+- **The schedule ships off.** A fresh deployment contacts nothing until it is enabled in
+  Settings → Modules. Queueing a month while it is off is safe: the month waits.
+
+In Dokploy, point the Domain at the `web` service, container port 3001. Nothing needs an
+environment variable to start.
+
 ## Layout
 
 ```text

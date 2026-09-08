@@ -1,0 +1,44 @@
+# Deploy target, and the way to run the whole thing locally in one command.
+#
+# In Dokploy: point the Domain at the `web` service, container port 3001, and
+# leave the schedule off until you mean to turn it on (Settings -> Modules).
+# Nothing here needs an environment variable to start; ALLET_TICK_SECONDS is
+# the only knob, and its default is fine.
+#
+# allet2.egorras.net is meant to be reachable over the tailnet only, so its DNS
+# record points at the host's Tailscale address rather than its public one.
+# Nothing in this file opens a public port: Dokploy's proxy decides that.
+services:
+  web:
+    build: .
+    environment:
+      # The web app and the API answer on one origin, so the browser never has
+      # a second host to talk to. See ALLET_PLAN.md §8.
+      ALLET_DB: /data/allet.db
+      ALLET_STATIC: ./apps/web/dist
+      ALLET_HOST: 0.0.0.0
+      PORT: 3001
+    volumes:
+      - allet-data:/data
+    restart: unless-stopped
+
+  # The only process that reaches opera.hu. It shares the database file with
+  # the API over a local volume: SQLite in WAL mode, one host, one filesystem.
+  # It spends nothing until the schedule is enabled, and one import at a time
+  # is enforced in the database, not by this file.
+  worker:
+    build: .
+    command: ['node', 'apps/server/node_modules/tsx/dist/cli.mjs', 'apps/server/src/worker.ts']
+    environment:
+      ALLET_DB: /data/allet.db
+      ALLET_TICK_SECONDS: ${ALLET_TICK_SECONDS:-60}
+    volumes:
+      - allet-data:/data
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  # Named, so a redeploy replaces the containers and keeps the catalogue,
+  # the run history and the request budget's pause state.
+  allet-data:
