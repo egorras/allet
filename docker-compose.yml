@@ -18,6 +18,12 @@ services:
       ALLET_STATIC: ./apps/web/dist
       ALLET_HOST: 0.0.0.0
       PORT: 3001
+    # Bound to loopback deliberately: the LAN is not an audience. What reaches
+    # this is either Dokploy's proxy on its own network, or `tailscale serve`
+    # forwarding from the tailnet.
+    # Overridable, because 3001 may already be taken on the host it lands on.
+    ports:
+      - '127.0.0.1:${ALLET_PORT:-3001}:3001'
     volumes:
       - allet-data:/data
     restart: unless-stopped

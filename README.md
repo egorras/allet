@@ -113,7 +113,20 @@ docker compose up --build     # web on container port 3001, worker beside it
   Settings → Modules. Queueing a month while it is off is safe: the month waits.
 
 In Dokploy, point the Domain at the `web` service, container port 3001. Nothing needs an
-environment variable to start.
+environment variable to start; `ALLET_PORT` only changes which loopback port the host publishes,
+for when 3001 is already taken.
+
+### Reaching it over the tailnet
+
+Tailscale issues a certificate for a `ts.net` name, which avoids pointing a public DNS record at a
+CGNAT address that Let's Encrypt cannot reach. With the stack up:
+
+```sh
+tailscale serve --bg --https=8443 http://127.0.0.1:3001   # https://<host>.<tailnet>.ts.net:8443
+tailscale serve --https=8443 off                          # and to stop
+```
+
+A port other than 443 is only needed when `/` on that host is already served by something else.
 
 ## Layout
 
