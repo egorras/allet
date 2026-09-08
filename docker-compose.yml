@@ -8,9 +8,20 @@
 # allet2.egorras.net is meant to be reachable over the tailnet only, so its DNS
 # record points at the host's Tailscale address rather than its public one.
 # Nothing in this file opens a public port: Dokploy's proxy decides that.
+# Docker's default json-file driver keeps every line forever. Capped here
+# rather than in the daemon's config, because that would need a restart of
+# every container on the host and would still only apply to containers created
+# afterwards. 30MB a service is far more than this app produces.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
 services:
   web:
     build: .
+    logging: *logging
     environment:
       # The web app and the API answer on one origin, so the browser never has
       # a second host to talk to. See ALLET_PLAN.md §8.
@@ -34,6 +45,7 @@ services:
   # is enforced in the database, not by this file.
   worker:
     build: .
+    logging: *logging
     command: ['node', 'apps/server/node_modules/tsx/dist/cli.mjs', 'apps/server/src/worker.ts']
     environment:
       ALLET_DB: /data/allet.db

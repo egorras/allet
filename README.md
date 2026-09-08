@@ -116,8 +116,15 @@ docker compose up --build     # web on container port 3001, worker beside it
 - **The schedule ships off.** A fresh deployment contacts nothing until it is enabled in
   Settings → Modules. Queueing a month while it is off is safe: the month waits.
 
-Dokploy is set to deploy `main` from GitHub on push. The host port is published on loopback only
-and set by `ALLET_PORT` — 3011 on the VPS, because 3001 was already taken there.
+Container logs are capped in the compose file (10MB x 3 a service) rather than in the host's Docker
+config, because a daemon-wide default needs a restart of every container on that host and still
+only applies to containers created afterwards.
+
+Deploys are triggered by hand for now. `autoDeploy` alone does nothing: Dokploy learns about a push
+through a deploy webhook, which quake-stats calls from CI after its checks pass. Wiring the same
+here is the next step, and is better than deploying straight from a push because it cannot ship a
+commit that failed its tests.The host port is published on loopback only and set by `ALLET_PORT` — 3011 on the VPS, because 3001
+was already taken there.
 
 ### Reaching it over the tailnet
 
