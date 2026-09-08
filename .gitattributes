@@ -1,0 +1,5 @@
+# Keep line endings LF everywhere, including Windows working copies:
+# Prettier is configured with endOfLine "lf" and CI checks formatting.
+* text=auto eol=lf
+pnpm-lock.yaml -diff linguist-generated
+apps/web/src/routeTree.gen.ts -diff linguist-generated
