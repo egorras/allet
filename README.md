@@ -92,10 +92,14 @@ extended.
 
 ## Deployment
 
-`allet2.egorras.net` runs on the VPS under Dokploy, the same way quake-stats does, and is reachable
-**over the tailnet only** — its DNS record points at the host's Tailscale address, not its public
-one. There is no sign-in yet, so the tailnet is the access control; do not give this hostname a
-public address until household accounts exist.
+It runs on the VPS under Dokploy, the same way quake-stats does, as the compose service `allet` in
+the `allet` project. Access is **over the tailnet only**:
+
+**https://wg.tail771cd.ts.net:8449/**
+
+There is no sign-in yet, so the tailnet is the access control. Do not give this a publicly reachable
+address until household accounts exist: the schedule and queue endpoints would be open to anyone
+who found the hostname, and they spend the opera.hu request budget.
 
 `docker-compose.yml` is both the Dokploy deploy target and the way to run the whole thing locally:
 
@@ -112,21 +116,20 @@ docker compose up --build     # web on container port 3001, worker beside it
 - **The schedule ships off.** A fresh deployment contacts nothing until it is enabled in
   Settings → Modules. Queueing a month while it is off is safe: the month waits.
 
-In Dokploy, point the Domain at the `web` service, container port 3001. Nothing needs an
-environment variable to start; `ALLET_PORT` only changes which loopback port the host publishes,
-for when 3001 is already taken.
+Dokploy is set to deploy `main` from GitHub on push. The host port is published on loopback only
+and set by `ALLET_PORT` — 3011 on the VPS, because 3001 was already taken there.
 
 ### Reaching it over the tailnet
 
 Tailscale issues a certificate for a `ts.net` name, which avoids pointing a public DNS record at a
-CGNAT address that Let's Encrypt cannot reach. With the stack up:
+CGNAT address that Let's Encrypt cannot reach. Traefik is not involved.
 
 ```sh
-tailscale serve --bg --https=8443 http://127.0.0.1:3001   # https://<host>.<tailnet>.ts.net:8443
-tailscale serve --https=8443 off                          # and to stop
+sudo tailscale serve --bg --https=8449 http://127.0.0.1:3011   # as configured on the VPS
+sudo tailscale serve --https=8449 off                          # and to stop
 ```
 
-A port other than 443 is only needed when `/` on that host is already served by something else.
+A port other than 443 is needed because that host already serves other things on 443 and 8443-8448.
 
 ## Layout
 
