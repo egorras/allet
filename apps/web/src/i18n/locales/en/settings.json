@@ -1,0 +1,36 @@
+{
+  "household": {
+    "title": "Household & members",
+    "description": "Who shares this space.",
+    "members": "Members",
+    "empty": "No members: sign-in is not connected in v0.",
+    "invite": "Invite member"
+  },
+  "modules": {
+    "title": "Modules & sources",
+    "description": "Which modules appear in navigation.",
+    "visibility": "Visible modules",
+    "hint": "Hiding a module only changes navigation on this device. It is not access control.",
+    "sources": "Sources",
+    "sourcesEmpty": "No source can be connected in v0."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Where changes are delivered.",
+    "channels": "Channels",
+    "empty": "No channel is connected: v0 sends nothing to Telegram or anywhere else."
+  },
+  "profile": {
+    "title": "My profile",
+    "description": "Settings that belong to you alone.",
+    "account": "Account",
+    "accountEmpty": "Sign-in is not connected yet, so there is no account to show.",
+    "preferences": "Preferences",
+    "density": {
+      "label": "Display density",
+      "comfortable": "Comfortable",
+      "compact": "Compact",
+      "hint": "Stored on this device only."
+    }
+  }
+}

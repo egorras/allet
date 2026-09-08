@@ -1,0 +1,37 @@
+{
+  "appName": "Allet",
+  "language": {
+    "label": "Sprache",
+    "en": "English",
+    "ru": "Русский",
+    "de": "Deutsch"
+  },
+  "actions": {
+    "close": "Schließen",
+    "clear": "Zurücksetzen",
+    "clearAll": "Alles zurücksetzen",
+    "back": "Zurück"
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Diese Adresse gehört zu keiner Seite der App.",
+    "goHome": "Zur Startseite"
+  },
+  "skeletonNotice": "v0 ist ein Gerüst: Server, Daten und externe Dienste sind noch nicht angebunden.",
+  "empty": {
+    "title": "Noch nichts vorhanden",
+    "noData": "Keine Daten — noch nichts angebunden."
+  },
+  "notConnected": {
+    "badge": "Nicht angebunden",
+    "reason": "Dafür braucht es einen Server, den v0 noch nicht hat."
+  },
+  "related": {
+    "title": "Verknüpfte Einträge",
+    "empty": "Verknüpfungen erscheinen, sobald es Daten gibt."
+  },
+  "map": {
+    "title": "Karte",
+    "empty": "Die Karte ist nicht angebunden: v0 ruft keinen Kartendienst auf."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Filter",
+  "none": "Kein Filter gesetzt.",
+  "active_one": "{{count}} Filter aktiv",
+  "active_other": "{{count}} Filter aktiv",
+  "clearAll": "Alles zurücksetzen",
+  "query": "Text",
+  "queryPlaceholder": "In der Liste suchen",
+  "from": "Von",
+  "to": "Bis",
+  "city": "Stadt",
+  "status": {
+    "label": "Status",
+    "all": "Alle",
+    "watching": "Beobachtet",
+    "paused": "Pausiert"
+  },
+  "participation": {
+    "label": "Beteiligung",
+    "all": "Alle",
+    "mine": "Mit mir"
+  },
+  "note": "Filter stehen in der Adresse: eine gefilterte Liste lässt sich neu laden und teilen."
+}

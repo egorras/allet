@@ -1,0 +1,36 @@
+{
+  "household": {
+    "title": "Haushalt & Mitglieder",
+    "description": "Wer diesen Bereich teilt.",
+    "members": "Mitglieder",
+    "empty": "Keine Mitglieder: die Anmeldung ist in v0 nicht angebunden.",
+    "invite": "Mitglied einladen"
+  },
+  "modules": {
+    "title": "Module & Quellen",
+    "description": "Welche Module in der Navigation erscheinen.",
+    "visibility": "Sichtbare Module",
+    "hint": "Ein verstecktes Modul ändert nur die Navigation auf diesem Gerät. Es ist keine Zugriffskontrolle.",
+    "sources": "Quellen",
+    "sourcesEmpty": "In v0 lässt sich keine Quelle anbinden."
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "description": "Wohin Änderungen zugestellt werden.",
+    "channels": "Kanäle",
+    "empty": "Kein Kanal angebunden: v0 sendet nichts an Telegram oder anderswohin."
+  },
+  "profile": {
+    "title": "Mein Profil",
+    "description": "Einstellungen, die nur Sie betreffen.",
+    "account": "Konto",
+    "accountEmpty": "Die Anmeldung ist noch nicht angebunden, es gibt kein Konto.",
+    "preferences": "Einstellungen",
+    "density": {
+      "label": "Anzeigedichte",
+      "comfortable": "Locker",
+      "compact": "Kompakt",
+      "hint": "Wird nur auf diesem Gerät gespeichert."
+    }
+  }
+}

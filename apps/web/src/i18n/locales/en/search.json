@@ -1,0 +1,8 @@
+{
+  "open": "Search pages",
+  "title": "Search",
+  "placeholder": "Type a page name",
+  "scopeNote": "v0 searches the pages of this app only — not performances, plans or files.",
+  "noResults": "No page matches this text.",
+  "shortcutHint": "Ctrl+K"
+}

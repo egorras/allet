@@ -1,0 +1,14 @@
+{
+  "title": "Plans",
+  "description": "Options you are weighing and plans you confirmed.",
+  "empty": "No plans yet.",
+  "new": "New plan",
+  "detail": {
+    "title": "Plan",
+    "id": "Identifier from the address: {{id}}",
+    "participants": "Participants",
+    "dates": "Dates",
+    "items": "Included records",
+    "notes": "Notes"
+  }
+}

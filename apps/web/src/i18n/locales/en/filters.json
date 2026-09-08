@@ -1,0 +1,24 @@
+{
+  "title": "Filters",
+  "none": "No filter applied.",
+  "active_one": "{{count}} filter applied",
+  "active_other": "{{count}} filters applied",
+  "clearAll": "Clear all",
+  "query": "Text",
+  "queryPlaceholder": "Search in the list",
+  "from": "From",
+  "to": "To",
+  "city": "City",
+  "status": {
+    "label": "Status",
+    "all": "All",
+    "watching": "Watching",
+    "paused": "Paused"
+  },
+  "participation": {
+    "label": "Participation",
+    "all": "All",
+    "mine": "With me"
+  },
+  "note": "Filters are kept in the address, so a filtered list can be reloaded and shared."
+}

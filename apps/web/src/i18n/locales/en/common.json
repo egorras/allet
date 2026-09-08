@@ -1,0 +1,37 @@
+{
+  "appName": "Allet",
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "ru": "Русский",
+    "de": "Deutsch"
+  },
+  "actions": {
+    "close": "Close",
+    "clear": "Clear",
+    "clearAll": "Clear all",
+    "back": "Back"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address does not match any page of the app.",
+    "goHome": "Go to home"
+  },
+  "skeletonNotice": "v0 is a skeleton: no server, no data and no external services are connected yet.",
+  "empty": {
+    "title": "Nothing here yet",
+    "noData": "No data — nothing is connected yet."
+  },
+  "notConnected": {
+    "badge": "Not connected",
+    "reason": "This needs a server, which v0 does not have yet."
+  },
+  "related": {
+    "title": "Related records",
+    "empty": "Links between records appear once there is data to link."
+  },
+  "map": {
+    "title": "Map",
+    "empty": "The map is not connected: v0 does not contact a map provider."
+  }
+}

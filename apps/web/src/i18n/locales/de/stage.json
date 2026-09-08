@@ -1,0 +1,38 @@
+{
+  "playbill": {
+    "title": "Spielplan",
+    "description": "Vorstellungen der kommenden Saison.",
+    "empty": "Keine Vorstellungen: keine Spielplanquelle angebunden."
+  },
+  "watchlist": {
+    "title": "Beobachtet",
+    "description": "Inszenierungen und Termine, die Sie verfolgen.",
+    "empty": "Nichts beobachtet: Beobachten braucht einen Server."
+  },
+  "works": {
+    "title": "Werke",
+    "description": "Werke, ihre Inszenierungen und Materialien.",
+    "empty": "Noch keine Werke."
+  },
+  "visits": {
+    "title": "Besuche",
+    "description": "Was tatsächlich besucht wurde.",
+    "empty": "Keine Besuche erfasst. Eine Karte ist kein Besuchsnachweis."
+  },
+  "work": {
+    "title": "Werk",
+    "id": "Kennung aus der Adresse: {{id}}",
+    "synopsis": "Handlung",
+    "libretto": "Libretto",
+    "recordings": "Aufnahmen",
+    "productions": "Inszenierungen"
+  },
+  "production": {
+    "title": "Inszenierung",
+    "id": "Kennung aus der Adresse: {{id}}",
+    "performances": "Vorstellungen",
+    "venue": "Spielstätte",
+    "availability": "Verlauf der Verfügbarkeit",
+    "notes": "Notizen"
+  }
+}
