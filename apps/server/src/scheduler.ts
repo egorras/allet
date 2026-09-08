@@ -97,7 +97,12 @@ export async function reconcileWindow(database: Database, sourceKey: string, now
 }
 
 /** The task to run now: a hand-picked month first, then the longest overdue. */
-export async function dueTask(database: Database, sourceKey: string, now: Date) {
+export async function dueTask(
+  database: Database,
+  sourceKey: string,
+  now: Date,
+  onlyOrigin?: 'window' | 'request',
+) {
   const candidates = await database.db
     .select()
     .from(tasks)
@@ -105,6 +110,7 @@ export async function dueTask(database: Database, sourceKey: string, now: Date) 
     .orderBy(asc(tasks.dueAt), asc(tasks.month))
   return candidates
     .filter((task) => task.dueAt <= now.toISOString())
+    .filter((task) => !onlyOrigin || task.origin === onlyOrigin)
     .sort((a, b) => Number(b.origin === 'request') - Number(a.origin === 'request'))[0]
 }
 
@@ -130,11 +136,15 @@ export async function runTick(
     .select()
     .from(schedules)
     .where(eq(schedules.sourceKey, sourceKey))
-  if (!schedule?.enabled) return { status: 'disabled' }
+  if (!schedule) return { status: 'disabled' }
   const at = now()
-  await reconcileWindow(database, sourceKey, at)
-  const task = await dueTask(database, sourceKey, at)
-  if (!task) return { status: 'idle' }
+  // The switch governs the rolling window, not the queue. A month someone
+  // asked for by hand is a deliberate request and runs either way — still one
+  // at a time and still out of the shared budget. Turning the schedule off
+  // stops Allet going looking for work; it does not ignore work it was given.
+  if (schedule.enabled) await reconcileWindow(database, sourceKey, at)
+  const task = await dueTask(database, sourceKey, at, schedule.enabled ? undefined : 'request')
+  if (!task) return { status: schedule.enabled ? 'idle' : 'disabled' }
 
   // Asked before starting, so a month the budget will not pay for never
   // becomes a failed import in the history.
@@ -157,17 +167,27 @@ export async function runTick(
       'scheduled',
     )
     const interval = schedule.intervalMinutes * MINUTE
-    const dueAt = new Date(now().getTime() + interval + spread(task.month, interval)).toISOString()
-    await database.db
-      .update(tasks)
-      .set({
-        dueAt,
-        lastRunAt: now().toISOString(),
-        lastStatus: 'success',
-        failures: 0,
-        origin: 'window',
-      })
-      .where(and(eq(tasks.sourceKey, sourceKey), eq(tasks.month, task.month)))
+    // Measured from the moment this run finished, never from when it was due:
+    // an idle day produces one run, not one for every interval that passed.
+    const finishedAt = now()
+    const where = and(eq(tasks.sourceKey, sourceKey), eq(tasks.month, task.month))
+    // A month the rolling window covers goes back in the rotation. Anything
+    // else was a one-off: it has been done, so it stops being tracked rather
+    // than sitting in the queue with a due date nothing will act on.
+    if (schedule.enabled && windowFor(finishedAt, schedule.windowMonths).includes(task.month))
+      await database.db
+        .update(tasks)
+        .set({
+          dueAt: new Date(
+            finishedAt.getTime() + interval + spread(task.month, interval),
+          ).toISOString(),
+          lastRunAt: finishedAt.toISOString(),
+          lastStatus: 'success',
+          failures: 0,
+          origin: 'window',
+        })
+        .where(where)
+    else await database.db.delete(tasks).where(where)
     return { status: 'imported', month: task.month }
   } catch (error) {
     // A busy source is not this month's fault: leave the task due and let the

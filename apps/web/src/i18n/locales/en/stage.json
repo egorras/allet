@@ -66,8 +66,8 @@
     },
     "schedule": {
       "title": "Schedule",
-      "hint": "The worker keeps a rolling window of months fresh, one month per check. A pause or a restart never causes a burst: a month that fell behind is imported once, not once for every interval that passed.",
-      "enabled": "Import on a schedule",
+      "hint": "The worker keeps a rolling window of months fresh, one month per check. A pause or a restart never causes a burst: a month that fell behind is imported once, not once for every interval that passed. Turning this off stops Allet looking for work on its own; a month you queue below still runs.",
+      "enabled": "Keep the next months up to date automatically",
       "window": "Months kept fresh",
       "interval": "Refresh each month at most",
       "every": {
@@ -82,7 +82,7 @@
     },
     "tasks": {
       "title": "Queued months",
-      "hint": "Months in the rolling window appear here on their own. Add a month to import one outside the window; it runs next, then stops being tracked.",
+      "hint": "Months in the rolling window appear here on their own. Add a month to import one outside the window: it runs at the next check even when automatic refresh is off, then stops being tracked.",
       "none": "No months are queued.",
       "add": "Import another month",
       "queue": "Add to the queue",

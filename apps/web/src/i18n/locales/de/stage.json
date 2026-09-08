@@ -66,8 +66,8 @@
     },
     "schedule": {
       "title": "Zeitplan",
-      "hint": "Der Worker hält ein gleitendes Fenster von Monaten aktuell, ein Monat pro Prüfung. Eine Pause oder ein Neustart lösen keinen Schwall aus: ein zurückgefallener Monat wird einmal importiert, nicht einmal je verstrichenem Intervall.",
-      "enabled": "Nach Zeitplan importieren",
+      "hint": "Der Worker hält ein gleitendes Fenster von Monaten aktuell, ein Monat pro Prüfung. Eine Pause oder ein Neustart lösen keinen Schwall aus: ein zurückgefallener Monat wird einmal importiert, nicht einmal je verstrichenem Intervall. Ist dies aus, sucht Allet nicht von sich aus nach Arbeit; ein unten eingereihter Monat läuft trotzdem.",
+      "enabled": "Die nächsten Monate automatisch aktuell halten",
       "window": "Monate im Fenster",
       "interval": "Monat höchstens erneuern",
       "every": {
@@ -82,7 +82,7 @@
     },
     "tasks": {
       "title": "Monate in der Warteschlange",
-      "hint": "Monate aus dem Fenster erscheinen hier von selbst. Fügen Sie einen Monat hinzu, um ihn außerhalb des Fensters zu importieren; er läuft als Nächstes und wird danach nicht weiter verfolgt.",
+      "hint": "Monate aus dem Fenster erscheinen hier von selbst. Fügen Sie einen Monat hinzu, um ihn außerhalb des Fensters zu importieren: er läuft bei der nächsten Prüfung, auch wenn die automatische Auffrischung aus ist, und wird danach nicht weiter verfolgt.",
       "none": "Keine Monate in der Warteschlange.",
       "add": "Weiteren Monat importieren",
       "queue": "Zur Warteschlange hinzufügen",

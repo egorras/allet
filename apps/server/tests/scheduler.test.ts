@@ -74,13 +74,41 @@ describe('rolling window', () => {
 })
 
 describe('tick', () => {
-  it('does nothing at all while the schedule is off', async () => {
+  it('goes looking for no work while the schedule is off', async () => {
     const database = await open(false)
     expect(await runTick(database, SOURCE, at('2026-10-05T00:00:00Z'), load)).toEqual({
       status: 'disabled',
     })
     expect(await database.db.select().from(tasks)).toHaveLength(0)
     expect(await database.db.select().from(runs)).toHaveLength(0)
+  })
+
+  it('still runs a month asked for by hand while the schedule is off', async () => {
+    // The switch governs the rolling window. Queueing a month is a deliberate
+    // request, and the interface says it runs next; it has to actually run.
+    const database = await open(false)
+    await requestMonthSync(database, SOURCE, '2026-10', new Date('2026-10-05T00:00:00Z'))
+    expect(await runTick(database, SOURCE, at('2026-10-05T00:01:00Z'), load)).toMatchObject({
+      status: 'imported',
+      month: '2026-10',
+    })
+    // Done, so it stops being tracked rather than sitting due forever, and no
+    // window months were invented while the schedule is off.
+    expect(await database.db.select().from(tasks)).toHaveLength(0)
+    expect((await database.db.select().from(runs))[0]).toMatchObject({ trigger: 'scheduled' })
+  })
+
+  it('keeps a fulfilled request out of the rotation unless the window covers it', async () => {
+    const database = await open()
+    await requestMonthSync(database, SOURCE, '2027-08', new Date('2026-10-05T00:00:00Z'))
+    await runTick(database, SOURCE, at('2026-10-05T00:01:00Z'), load)
+    const months = (await database.db.select().from(tasks)).map((task) => task.month)
+    expect(months).not.toContain('2027-08')
+    // A requested month the window does cover goes back into the rotation.
+    await requestMonthSync(database, SOURCE, '2026-11', new Date('2026-10-05T00:02:00Z'))
+    await runTick(database, SOURCE, at('2026-10-05T00:03:00Z'), load)
+    const [kept] = await database.db.select().from(tasks).where(eq(tasks.month, '2026-11'))
+    expect(kept).toMatchObject({ origin: 'window', lastStatus: 'success' })
   })
 
   it('imports one month per tick and records the run as scheduled', async () => {
@@ -116,7 +144,6 @@ describe('tick', () => {
     expect(await runTick(database, SOURCE, at('2026-10-05T00:01:00Z'), load)).toMatchObject({
       month: '2027-05',
     })
-    await reconcileWindow(database, SOURCE, new Date('2026-10-05T00:02:00Z'))
     expect((await database.db.select().from(tasks)).map((task) => task.month)).not.toContain(
       '2027-05',
     )
