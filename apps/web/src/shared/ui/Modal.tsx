@@ -55,7 +55,7 @@ export function Modal({ open, onClose, title, variant = 'center', children }: Mo
           <CloseIcon />
         </button>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="max-h-[75vh] overflow-y-auto p-4">{children}</div>
     </dialog>
   )
 }

@@ -37,11 +37,10 @@ export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false)
 
   const tabs = coreSections.filter((section) => TAB_SECTION_IDS.includes(section.id))
-  const moreSections = [
-    ...coreSections.filter((section) => !TAB_SECTION_IDS.includes(section.id)),
-    ...modules,
-    settings,
-  ]
+  // Core sections hold a single page, so they belong in the sheet as plain links;
+  // only modules and settings are shown as groups.
+  const moreLinks = coreSections.filter((section) => !TAB_SECTION_IDS.includes(section.id))
+  const moreSections = [...modules, settings]
 
   return (
     <>
@@ -90,6 +89,18 @@ export function MobileNav() {
         title={t('moreTitle')}
         variant="sheet"
       >
+        {moreLinks.map((section) =>
+          section.pages.map((page) => (
+            <NavLink
+              key={page.path}
+              page={page}
+              icon={section.icon}
+              onNavigate={() => {
+                setMoreOpen(false)
+              }}
+            />
+          )),
+        )}
         {moreSections.map((section) => (
           <MoreSection
             key={section.id}

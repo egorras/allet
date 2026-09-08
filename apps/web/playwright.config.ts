@@ -11,6 +11,9 @@ export default defineConfig({
   reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : [['list']],
   use: {
     baseURL,
+    // The app picks its language from the browser, so tests fix one; language
+    // switching itself is covered by language.spec.ts.
+    locale: 'en-US',
     // Reports and traces exist for failures; nothing is auto-accepted.
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
